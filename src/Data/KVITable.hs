@@ -6,10 +6,13 @@ module Data.KVITable
     KVITable(KVITable)
   , Key
   , KeyVal
+  , KeyVals
+  , KeySpec
   , fromList
   , toList
   , Data.KVITable.lookup
   , keyVals
+  , keyValGen
   , valueColName
   , insert
   , foldlInsert
@@ -35,15 +38,25 @@ import           Lens.Micro ( Lens' )
 -- but the values are indexed by a list of Key+Value combinations, and
 -- the table contents can be sparse.
 
-data KVITable v = KVITable { keyvals      :: KeyVals -- ^ allowed value for keys (in order)
-                           , contents     :: Map.Map KeySpec v
-                             -- The invariant for the KVITable is that
-                             -- each KeySpec contains all keys listed
-                             -- in keyvals (in the same order) with
-                             -- the defaultKeyVal for any keys not
-                             -- explicitly provided for that value.
-                           , valuecolName :: Text  -- ^ name of the value cells
-                           }
+data KVITable v = KVITable
+  { keyvals      :: KeyVals -- ^ allowed value for keys (in order)
+
+  , keyvalGen    :: Key -> KeyVal
+    -- ^ Function to generate the keyval if the keyval is not
+    -- explicitly provided.  Provided with the Key and returns the
+    -- KeyVal that should be used.
+
+  , contents     :: Map.Map KeySpec v
+    -- The invariant for the KVITable is that each KeySpec contains
+    -- all keys listed in keyvals (in the same order) with the
+    -- defaultKeyVal for any keys not explicitly provided for that
+    -- value.
+
+  , valuecolName :: Text  -- ^ name of the value cells
+
+  -- , entryFactory :: Maybe a -- ^ possible generator for unset cells
+  -- , kvFactory    :: Maybe (Key -> KeyVal)  -- ^ default KeyVal for Key
+  }
 
 instance Eq v => Eq (KVITable v) where
   -- n.b. keyvals (i.e. metadata) are _not_ used for equality, only contents
@@ -61,9 +74,6 @@ type KeyVal = Text
 type KeySpec = [ (Key,  KeyVal ) ]
 type KeyVals = [ (Key, [KeyVal]) ]
 
-defaultKeyVal :: KeyVal
-defaultKeyVal = ""
-
 -- | The KVITable semigroup is left biased (same as Data.Map).  Note
 -- that joining tables can result in a table that has a different
 -- keyVals sequence than either input table.
@@ -77,12 +87,14 @@ instance Semigroup (KVITable v) where
 
 instance Monoid (KVITable v) where
   mempty = KVITable { keyvals = mempty
+                    , keyvalGen = const ""
                     , contents = mempty
                     , valuecolName = "Value"
                     }
 
 instance Functor KVITable where
   fmap f t = KVITable { contents = fmap f (contents t)
+                      , keyvalGen = keyvalGen t
                       , keyvals = keyvals t
                       , valuecolName = valuecolName t
                       }
@@ -94,6 +106,7 @@ instance Traversable KVITable where
   traverse f t = (\c -> KVITable { contents = c
                                  , valuecolName = valuecolName t
                                  , keyvals = keyvals t
+                                 , keyvalGen = keyvalGen t
                                  }
                  ) <$> traverse f (contents t)
 
@@ -128,8 +141,13 @@ keyVals f t = (\kvs ->
               ) <$> f (keyvals t)
 
 
+-- | Fetch or set the default 'KeyVal' generator for this 'KVITable'
+
+keyValGen :: Lens' (KVITable v) (Key -> KeyVal)
+keyValGen f t = (\n -> t { keyvalGen = n } ) <$> f (keyvalGen t)
+
 -- | Fetch or set the column name for the actual value cell in the
--- KVITable.
+-- 'KVITable'.
 
 valueColName :: Lens' (KVITable v) Text
 valueColName f t = (\n -> t { valuecolName = n } ) <$> f (valuecolName t)
@@ -155,7 +173,7 @@ normalizeKeySpec t keyspec =
   let keyandval s (k,vs) = case L.lookup k keyspec of
         Just v -> if v `elem` vs then s <> [(k,v)]
                   else s -- no level added, so this should never match in the Map
-        Nothing -> s <> [(k, defaultKeyVal)]
+        Nothing -> s <> [(k, keyvalGen t k)]
   in foldl keyandval [] (keyvals t)
 
 -- | Inserts a new cell value into the table at the specified keyspec
@@ -167,57 +185,65 @@ normalizeKeySpec t keyspec =
 -- insertion operation.
 
 insert :: KeySpec -> v -> KVITable v -> KVITable v
-insert keyspec val t =
-  let remainingKeyValDefaults = fmap (\(k,_) -> (k, defaultKeyVal))
-      addDefVal e@(k,vs) = if defaultKeyVal `elem` vs
-                           then e
-                           else (k, L.sort $ defaultKeyVal : vs)
-      -- endset :: KeyVals -> KeySpec -> KeySpec -> KeyVals -> KVITable v
-      endset rkv [] tspec kvbld =
+insert keyspec val t = endset t val (keyvals t) keyspec [] []
+
+remainingKeyValDefaults :: KVITable v -> [(Key,a)] -> KeySpec
+remainingKeyValDefaults t = fmap (\(k,_) -> (k, keyvalGen t k))
+
+addDefVal :: KVITable v -> (Key, [KeyVal]) ->  (Key, [KeyVal])
+addDefVal t e@(k,vs) = if (keyvalGen t k) `elem` vs
+                       then e
+                       else (k, L.sort $ keyvalGen t k : vs)
+
+endset :: KVITable v -> v -> KeyVals -> KeySpec -> KeySpec -> KeyVals -> KVITable v
+endset t val rkv [] tspec kvbld =
         -- Reached the end of the user's keyspec but there are more
         -- known keyvals in this KVITable, so add the entry with the
         -- default KeyVal for the remaining keyspec (and ensure the
         -- default KeyVal is listed in the table's keyvals).
-        let spec = tspec <> remainingKeyValDefaults rkv
+        let spec = tspec <> remainingKeyValDefaults t rkv
         in t { contents = Map.insert spec val (contents t)
-             , keyvals = kvbld <> (addDefVal <$> rkv)
+             , keyvals = kvbld <> (addDefVal t <$> rkv)
              }
-      endset [] spec tspec kvbld =
-        -- Reached the end of the known keyvals for this table but the
-        -- user's keyspec has additional elements.  This should extend
-        -- the tables keyvals with the remaining keyspec; also all
-        -- existing table values should be pushed out to use the
-        -- default values for the new keys in their keyspec.
-        let spec' = tspec <> spec
-            keyvals' = kvbld <> (fmap (L.sort .
-                                       if null curTblList
-                                       then (:[])
-                                       else (:[defaultKeyVal])) <$> spec)
-            curTblList = Map.toList $ contents t
-            updTblList = fmap (\(ks,v) -> (ks <> remainingKeyValDefaults spec, v)) curTblList
-        in t { contents = Map.insert spec' val $ Map.fromList updTblList
-             , keyvals = keyvals'
-             }
-      endset kvs@((k,vs):rkvs) ((sk,sv):srs) tspec kvbld =
-        if k == sk
-        then let kv' = if sv `elem` vs
-                       then kvbld <> [(k,vs)]
-                       else kvbld <> [(k, L.sort $ sv : vs)]
-             in endset rkvs srs (tspec <> [(k,sv)]) kv'
-        else
-          -- re-arrange user spec crudely by throwing invalid
-          -- candidates to the end and retrying.  This isn't
-          -- necessarily efficient, but keyspecs aren't expected to be
-          -- longer than about a dozen entries.
-          if sk `elem` (fst <$> rkvs) && k `elem` (fst <$> srs)
-          then endset kvs (srs <> [(sk,sv)]) tspec kvbld
-          else
-            if any (`elem` (fst <$> kvs)) (fst <$> srs)
-            then endset kvs (srs <> [(sk,sv)]) tspec kvbld
-            else
-              let vs' = if defaultKeyVal `elem` vs then vs else (L.sort $ defaultKeyVal : vs)
-              in endset rkvs ((sk,sv):srs) (tspec <> [(k,defaultKeyVal)]) (kvbld <> [(k,vs')])
-  in endset (keyvals t) keyspec [] []
+
+endset t val [] spec tspec kvbld =
+  -- Reached the end of the known keyvals for this table but the
+  -- user's keyspec has additional elements.  This should extend
+  -- the tables keyvals with the remaining keyspec; also all
+  -- existing table values should be pushed out to use the
+  -- default values for the new keys in their keyspec.
+  let spec' = tspec <> spec
+      keySpecElemToKeyVals (k,v) = (k, L.sort $ if null curTblList
+                                                then [v]
+                                                else [v, keyvalGen t k])
+      keyvals' = kvbld <> (keySpecElemToKeyVals <$> spec)
+      curTblList = Map.toList $ contents t
+      defaultsExtension = remainingKeyValDefaults t spec
+      updTblList = fmap (\(ks,v) -> (ks <> defaultsExtension, v)) curTblList
+  in t { contents = Map.insert spec' val $ Map.fromList updTblList
+       , keyvals = keyvals'
+       }
+
+endset t val kvs@((k,vs):rkvs) ((sk,sv):srs) tspec kvbld =
+  if k == sk
+  then let kv' = if sv `elem` vs
+                 then kvbld <> [(k,vs)]
+                 else kvbld <> [(k, L.sort $ sv : vs)]
+       in endset t val rkvs srs (tspec <> [(k,sv)]) kv'
+  else
+    -- re-arrange user spec crudely by throwing invalid
+    -- candidates to the end and retrying.  This isn't
+    -- necessarily efficient, but keyspecs aren't expected to be
+    -- longer than about a dozen entries.
+    if sk `elem` (fst <$> rkvs) && k `elem` (fst <$> srs)
+    then endset t val kvs (srs <> [(sk,sv)]) tspec kvbld
+    else
+      if any (`elem` (fst <$> kvs)) (fst <$> srs)
+      then endset t val kvs (srs <> [(sk,sv)]) tspec kvbld
+      else
+        let defVal = keyvalGen t k
+            vs' = if defVal `elem` vs then vs else (L.sort $ defVal : vs)
+        in endset t val rkvs ((sk,sv):srs) (tspec <> [(k,defVal)]) (kvbld <> [(k,vs')])
 
 
 -- | The foldlInsert is a convenience function that can be specified

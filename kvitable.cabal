@@ -38,6 +38,7 @@ library
   GHC-options:         -Wall -Wcompat -fhide-source-paths
   -- other-extensions:
   exposed-modules:     Data.KVITable
+                     , Data.KVITable.Render
                      , Data.KVITable.Render.ASCII
   -- other-modules:
   build-depends:       base >=4.14 && <4.15

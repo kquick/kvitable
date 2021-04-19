@@ -29,7 +29,7 @@ inSeps =
       nxtC (Pass s) c = let s' = c : s
                             sl = reverse $ take sepl s'
                         in if sl == sep
-                           then Post (reverse $ drop sepl s')
+                           then Post (reverse $ drop (sepl-1) s')
                            else Pass s'
       nxtC (Post s) _ = Post s
     in foldl nxtC (Pre "")
