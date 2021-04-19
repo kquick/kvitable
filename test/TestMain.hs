@@ -12,7 +12,7 @@ import           Test.Tasty.HUnit
 
 import           Data.KVITable
 
-import           Prelude hiding ( lookup )
+import           Prelude hiding ( filter, lookup )
 import           Debug.Trace
 
 
@@ -210,6 +210,14 @@ main = defaultMain $
            , ([ "gcc8", "yes", "0"], "good" )
            , ([ "gcc8", "yes", "1"], "bad" )
            , ([ "gcc8", "yes", "3"], "true" )
+           ]
+
+         , testCase "filter" $
+           rows (filter (\(spec,val) -> ("compiler", "gcc7") `elem` spec) mediumKVI) @?=
+           [ ([ "gcc7", "no", "0"], "bad" )
+           , ([ "gcc7", "no", "1"], "good" )
+           , ([ "gcc7", "yes", "0"], "good" )
+           , ([ "gcc7", "yes", "3"], "ugly" )
            ]
 
          ]

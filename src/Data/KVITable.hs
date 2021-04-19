@@ -12,6 +12,7 @@ module Data.KVITable
   , keyVals
   , valueColName
   , insert
+  , Data.KVITable.filter
   , rows
   )
 where
@@ -212,6 +213,12 @@ insert keyspec val t =
               in endset rkvs ((sk,sv):srs) (tspec <> [(k,defaultKeyVal)]) (kvbld <> [(k,vs')])
   in endset (keyvals t) keyspec [] []
 
+-- | Filter table to retain only the elements that satisfy some predicate.
+
+filter :: ((KeySpec, v) -> Bool) -> KVITable v -> KVITable v
+filter f t = foldl chkInsert (emptyClone t) $ toList t
+  where emptyClone o = o { contents = mempty }
+        chkInsert o (k,v) = if f (k,v) then insert k v o else o
 
 -- | The 'rows' function returns a set of rows for the KVITable as a
 -- list structure, where each list entry is a different row.  A row
