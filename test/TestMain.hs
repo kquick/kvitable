@@ -157,4 +157,19 @@ main = defaultMain $
              1 @=? (length $ catMaybes [ lookup [("moo", "sheep"), ("foo", "bar"), ("moo", "cow")] kvi1
                                        , lookup [("moo", "cow"), ("foo", "bar"), ("moo", "sheep")] kvi1
                                        ])
+
+         , testCase "deep add" $
+           let t0 = mempty
+                    & keyVals .~ [ ("foo", ["bar", "baz"])
+                                 , ("moon", ["beam", "pie"])
+                                 ]
+                    & valueColName .~ "says"
+               t1 = insert [ ("foo", "Bill"), ("moon", "Ted"), ("dog", "arf arf") ] "Excellent!" $
+                    insert [ ("foo", "baz"), ("moon", "beam"), ("dog", "woof") ] "yo" $
+                    insert [ ("foo", "bar"), ("moon", "pie") ] "hi"
+                    t0
+           in rows t1 @?= [ ([ "bar", "pie", "" ], "hi")
+                          , ([ "baz", "beam", "woof"], "yo")
+                          , ([ "Bill", "Ted", "arf arf" ], "Excellent!")
+                          ]
          ]

@@ -180,9 +180,7 @@ insert keyspec val t =
         -- existing table values should be pushed out to use the
         -- default values for the new keys in their keyspec.
         let spec' = tspec <> spec
-            keyvals' = kvbld <> (fmap (:[]) <$> spec)
-            -- pushSpec = tspec <> remainingKeyValDefaults spec
-            -- pushKeyvals = kvbld <> (fmap (\v -> [v, defaultKeyVal]) <$> spec)
+            keyvals' = kvbld <> (fmap (if null curTblList then (:[]) else (:[defaultKeyVal])) <$> spec)
             curTblList = Map.toList $ contents t
             updTblList = fmap (\(ks,v) -> (ks <> remainingKeyValDefaults spec, v)) curTblList
         in t { contents = Map.insert spec' val $ Map.fromList updTblList
