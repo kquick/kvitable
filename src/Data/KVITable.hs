@@ -58,11 +58,16 @@ type KeyVals = [ (Key, [KeyVal]) ]
 defaultKeyVal :: KeyVal
 defaultKeyVal = ""
 
--- | The KVITable semigroup is left biased (same as Data.Map).
+-- | The KVITable semigroup is left biased (same as Data.Map).  Note
+-- that joining tables can result in a table that has a different
+-- keyVals sequence than either input table.
+
 instance Semigroup (KVITable v) where
-  a <> b = KVITable { contents = contents a <> contents b
-                    , valuecolName = valuecolName a
-                    }
+  a <> b = foldr (\(ks,v) t -> insert ks v t)
+           (mempty { valuecolName = valuecolName a
+                   , keyvals = keyvals a
+                   })
+           (toList b <> toList a)
 
 instance Monoid (KVITable v) where
   mempty = KVITable { keyvals = mempty

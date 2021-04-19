@@ -28,6 +28,9 @@ main = defaultMain $
              ]
            kvi0 = mempty :: KVITable Text
            kvi1 = fromList listing1
+           kvi1_1 = fromList $ take 2 listing1
+           kvi1_2 = fromList $ drop 2 listing1
+
        in
          [
            testCase "empty table" $ (mempty :: KVITable Bool) @=? (mempty :: KVITable Bool)
@@ -43,6 +46,34 @@ main = defaultMain $
          , testCase "traversable" $
            Just (sort $ snd <$> listing1) @=?
            sort . fmap snd . toList <$> (traverse Just kvi1)
+
+         , testCaseSteps "semigroup" $ \step ->
+             do step "empty to full"
+                mempty <> kvi1 @?= kvi1
+                step "full to empty"
+                kvi1 <> mempty @?= kvi1
+                step "idempotent"
+                kvi1 <> kvi1 @?= kvi1
+
+                step "join parts"
+                kvi1_2 <> kvi1_1 @?= kvi1  -- happens to be the right order
+
+                -- note: it is *not* the case that
+                --
+                -- >   kvi1_1 <> kvi1_2 == kvi1
+                --
+                -- because the keyvals from a semigroup operation are
+                -- built dynamically and this particular kvi1_1 /
+                -- kvi1_2 will result in a different key order in
+                -- reverse.  However, specifying the keyVals
+                -- explicitly can eliminate key detection ordering concerns.
+
+                step "keyed"
+                let keyed = mempty & keyVals .~ [ ("foo", ["baz", "", "bar"])
+                                                , ("moo", ["cow"])
+                                                , ("goose", ["honk", ""])
+                                                ]
+                keyed <> kvi1_1 <> kvi1_2 @?= kvi1
 
          , testCase "empty lookup fails" $
            Nothing @=? lookup [("foo", "bar"), ("moo", "cow")] (mempty :: KVITable Bool)
