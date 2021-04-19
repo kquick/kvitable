@@ -17,6 +17,7 @@ defaultRenderConfig = RenderConfig
   , sortKeyVals   = False
   , colStackAt    = Nothing
   , rowRepeat     = True
+  , rowGroup      = []
   , caption       = Nothing
   }
 
@@ -44,7 +45,11 @@ data RenderConfig = RenderConfig
     -- rather than creating additional sub-rows.
 
   , rowRepeat :: Bool
-    -- ^ 'True' (default) if an identical entry is to be repeated in subsequent rows
+    -- ^ 'True' (default) if an identical entry is to be repeated in subsequent rows  [?? KWQ: clarify ...]
+
+  , rowGroup :: [Key]
+    -- ^ List of Key names that should by grouped by inserting
+    -- horizontal row lines between KeyVals
 
   , caption :: Maybe Text
     -- ^ Caption to render for table for backends which support

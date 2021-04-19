@@ -135,7 +135,14 @@ renderSeq cfg fmt keys kvitbl = fmtRender fmt . snd <$> asciiRows keys []
       | colStackAt cfg == Just key = [ (False, multivalRows (key:kseq) path) ]
       | otherwise =
         let subrows keyval = asciiRows kseq $ path <> [ (key, keyval) ]
-            addSubrows ret keyval = ret <> (fst $ foldl leftAdd ([],keyval) $ subrows keyval)
+            grprow keyval subs = if key `elem` rowGroup cfg && not (null subs)
+                                 then let subl = [ (True, replicate (length $ snd $ head subs) Nothing) ]
+                                      in if fst (last subs)
+                                         then init subs <> subl
+                                         else subs <> subl
+                                 else subs
+            addSubrows ret keyval = ret <> (grprow keyval $ fst $
+                                            foldl leftAdd ([],keyval) $ subrows keyval)
             leftAdd (acc,kv) (b,subrow) = (acc <> [ (b, Just kv : subrow) ],
                                            if rowRepeat cfg then kv else "")
             ordering = if sortKeyVals cfg then sortWithNums else id
