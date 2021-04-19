@@ -129,7 +129,7 @@ toList = GHC.Exts.toList
 
 keyVals :: Lens' (KVITable v) KeyVals
 keyVals f t = (\kvs ->
-                 t { keyvals = fmap L.sort <$> kvs
+                 t { keyvals = kvs
                    , contents =
                      let inKVS spec _ = inkv spec kvs
                          inkv [] [] = True
@@ -193,7 +193,7 @@ remainingKeyValDefaults t = fmap (\(k,_) -> (k, keyvalGen t k))
 addDefVal :: KVITable v -> (Key, [KeyVal]) ->  (Key, [KeyVal])
 addDefVal t e@(k,vs) = if (keyvalGen t k) `elem` vs
                        then e
-                       else (k, L.sort $ keyvalGen t k : vs)
+                       else (k, keyvalGen t k : vs)
 
 endset :: KVITable v -> v -> KeyVals -> KeySpec -> KeySpec -> KeyVals -> KVITable v
 endset t val rkv [] tspec kvbld =
@@ -213,9 +213,9 @@ endset t val [] spec tspec kvbld =
   -- existing table values should be pushed out to use the
   -- default values for the new keys in their keyspec.
   let spec' = tspec <> spec
-      keySpecElemToKeyVals (k,v) = (k, L.sort $ if null curTblList
-                                                then [v]
-                                                else [v, keyvalGen t k])
+      keySpecElemToKeyVals (k,v) = (k, if null curTblList
+                                       then [v]
+                                       else [v, keyvalGen t k])
       keyvals' = kvbld <> (keySpecElemToKeyVals <$> spec)
       curTblList = Map.toList $ contents t
       defaultsExtension = remainingKeyValDefaults t spec
@@ -227,8 +227,8 @@ endset t val [] spec tspec kvbld =
 endset t val kvs@((k,vs):rkvs) ((sk,sv):srs) tspec kvbld =
   if k == sk
   then let kv' = if sv `elem` vs
-                 then kvbld <> [(k,vs)]
-                 else kvbld <> [(k, L.sort $ sv : vs)]
+                 then kvbld <> [(k, vs)]
+                 else kvbld <> [(k, sv : vs)]
        in endset t val rkvs srs (tspec <> [(k,sv)]) kv'
   else
     -- re-arrange user spec crudely by throwing invalid
@@ -242,7 +242,7 @@ endset t val kvs@((k,vs):rkvs) ((sk,sv):srs) tspec kvbld =
       then endset t val kvs (srs <> [(sk,sv)]) tspec kvbld
       else
         let defVal = keyvalGen t k
-            vs' = if defVal `elem` vs then vs else (L.sort $ defVal : vs)
+            vs' = if defVal `elem` vs then vs else (defVal : vs)
         in endset t val rkvs ((sk,sv):srs) (tspec <> [(k,defVal)]) (kvbld <> [(k,vs')])
 
 

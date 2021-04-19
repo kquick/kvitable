@@ -94,16 +94,16 @@ main = defaultMain $
 
                 step "at end"
                 let t3 = insert [ ("foo", "dog") ] "oops" t1
-                rows t3 @?= [ ([ "bar", "cow" ], "hi")
-                            , ([ "dog", ""    ], "oops")
+                rows t3 @?= [ ([ "dog", ""    ], "oops")
+                            , ([ "bar", "cow" ], "hi")
                             ]
 
                 step "in middle"
                 let keyvals' = [ ("foo", "bar"), ("moo", "cow"), ("oink", "pig") ]
                     t1' = insert keyvals' "hi" kvi0
                     t4 = insert [ ("foo", "baz"), ("oink", "hog") ] "oops" t1'
-                rows t4 @?= [ ([ "bar", "cow", "pig" ], "hi")
-                            , ([ "baz", "",    "hog" ], "oops")
+                rows t4 @?= [ ([ "baz", "",    "hog" ], "oops")
+                            , ([ "bar", "cow", "pig" ], "hi")
                             ]
 
          , testCaseSteps "valueColName" $ \step ->
@@ -114,9 +114,9 @@ main = defaultMain $
                 step "update"
                 "says Value" @=? (kvi1 & valueColName %~ ("says " <>)) ^. valueColName
 
-         , testCase "keyVals fetch" $ [ ("foo", ["", "bar", "baz"])
+         , testCase "keyVals fetch" $ [ ("foo", ["baz", "", "bar"])
                                       , ("moo", ["cow"])
-                                      , ("goose", ["", "honk"])
+                                      , ("goose", ["honk", ""])
                                       ] @=? kvi1 ^. keyVals
 
          , testCaseSteps "lookup" $ \step ->
@@ -166,28 +166,28 @@ main = defaultMain $
 
          , testCase "medium sized table rows" $
            rows mediumKVI @?=
-           [ ([ "clang10", "no", "3"], "good" )
-           , ([ "clang10", "yes", "3"], "good" )
-           , ([ "clang6", "yes", "0"], "ok" )
-           , ([ "clang7", "no", "0"], "good" )
-           , ([ "clang7", "no", "1"], "good" )
-           , ([ "clang7", "no", "3"], "good" )
-           , ([ "clang7", "yes", "3"], "good" )
+           [ ([ "gcc7", "yes", "0"], "good" )
+           , ([ "gcc7", "yes", "3"], "ugly" )
            , ([ "gcc7", "no", "0"], "bad" )
            , ([ "gcc7", "no", "1"], "good" )
-           , ([ "gcc7", "yes", "0"], "good" )
-           , ([ "gcc7", "yes", "3"], "ugly" )
            , ([ "gcc8", "yes", "0"], "good" )
            , ([ "gcc8", "yes", "1"], "bad" )
            , ([ "gcc8", "yes", "3"], "true" )
+           , ([ "clang6", "yes", "0"], "ok" )
+           , ([ "clang10", "yes", "3"], "good" )
+           , ([ "clang10", "no", "3"], "good" )
+           , ([ "clang7", "yes", "3"], "good" )
+           , ([ "clang7", "no", "0"], "good" )
+           , ([ "clang7", "no", "1"], "good" )
+           , ([ "clang7", "no", "3"], "good" )
            ]
 
          , testCase "filter" $
            rows (filter (\(spec,val) -> ("compiler", "gcc7") `elem` spec) mediumKVI) @?=
-           [ ([ "gcc7", "no", "0"], "bad" )
-           , ([ "gcc7", "no", "1"], "good" )
-           , ([ "gcc7", "yes", "0"], "good" )
+           [ ([ "gcc7", "yes", "0"], "good" )
            , ([ "gcc7", "yes", "3"], "ugly" )
+           , ([ "gcc7", "no", "0"], "bad" )
+           , ([ "gcc7", "no", "1"], "good" )
            ]
 
          , testCaseSteps "zoo contents" $ \step -> do

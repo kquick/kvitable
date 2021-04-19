@@ -118,7 +118,7 @@ testAsciiRendering =
 |  baz | beam |    woof |         yo |
 @@@@|]
 
-    , testCase "medium sized table render" $
+    , testCase "medium sized table render, sorted" $
       cmpTables "medium table"
       (KTRA.render (cfg0 { KTR.sortKeyVals = True }) mediumKVI) [sq|
 @@@@
@@ -138,6 +138,28 @@ testAsciiRendering =
 |   clang7 |   yes |            3 |  good |
 |  clang10 |    no |            3 |  good |
 |  clang10 |   yes |            3 |  good |
+@@@@|]
+
+    , testCase "medium sized table render, unsorted" $
+      cmpTables "medium table"
+      (KTRA.render (cfg0 { KTR.sortKeyVals = False }) mediumKVI) [sq|
+@@@@
+| compiler | debug | optimization | Value |
++----------+-------+--------------+-------+
+|     gcc7 |   yes |            0 |  good |
+|     gcc7 |   yes |            3 |  ugly |
+|     gcc7 |    no |            0 |   bad |
+|     gcc7 |    no |            1 |  good |
+|     gcc8 |   yes |            0 |  good |
+|     gcc8 |   yes |            1 |   bad |
+|     gcc8 |   yes |            3 |  true |
+|   clang6 |   yes |            0 |    ok |
+|  clang10 |   yes |            3 |  good |
+|  clang10 |    no |            3 |  good |
+|   clang7 |   yes |            3 |  good |
+|   clang7 |    no |            0 |  good |
+|   clang7 |    no |            1 |  good |
+|   clang7 |    no |            3 |  good |
 @@@@|]
 
     ]
