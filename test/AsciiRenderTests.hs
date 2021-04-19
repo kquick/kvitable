@@ -273,4 +273,27 @@ testAsciiRendering =
 +----------+-------+--------------+-------+
 @@@@|]
 
+    , testCase "medium table, sorted, blank" $
+      cmpTables "medium table"
+      (KTRA.render (cfg0 { KTR.sortKeyVals = True
+                         , KTR.blankRows = False }) mediumKVI) [sq|
+@@@@
+| compiler | debug | optimization | Value |
++----------+-------+--------------+-------+
+|     gcc7 |    no |            0 |   bad |
+|          |       |            1 |  good |
+|          |   yes |            0 |  good |
+|          |       |            3 |  ugly |
+|     gcc8 |   yes |            0 |  good |
+|          |       |            1 |   bad |
+|          |       |            3 |  true |
+|   clang6 |   yes |            0 |    ok |
+|   clang7 |    no |            0 |  good |
+|          |       |            1 |  good |
+|          |       |            3 |  good |
+|          |   yes |            3 |  good |
+|  clang10 |    no |            3 |  good |
+|          |   yes |            3 |  good |
+@@@@|]
+
     ]

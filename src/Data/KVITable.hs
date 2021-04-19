@@ -38,6 +38,8 @@ import           Lens.Micro ( Lens' )
 -- but the values are indexed by a list of Key+Value combinations, and
 -- the table contents can be sparse.
 
+-- KWQ: make fields strict?  check with tasty-bench
+
 data KVITable v = KVITable
   { keyvals      :: KeyVals -- ^ allowed value for keys (in order)
 
@@ -70,7 +72,7 @@ instance Show v => Show (KVITable v) where
            "}"
 
 type Key = Text
-type KeyVal = Text
+type KeyVal = Text -- KWQ: parameterize
 type KeySpec = [ (Key,  KeyVal ) ]
 type KeyVals = [ (Key, [KeyVal]) ]
 
@@ -90,6 +92,8 @@ instance Monoid (KVITable v) where
                     , keyvalGen = const ""
                     , contents = mempty
                     , valuecolName = "Value"
+                    -- , entryFactory = Nothing
+                    -- , kvFactory = Nothing
                     }
 
 instance Functor KVITable where
