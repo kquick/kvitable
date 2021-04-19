@@ -195,12 +195,13 @@ nestedTable = foldl foldlInsert
                              , ("ones",      ["0"])
                              ]
               )
-              [ ([("millions", T.pack $ show m)
-                 ,("thousands", T.pack $ show t)
-                 ,("hundreds", T.pack $ show h)
-                 ,("tens", T.pack $ show d)
-                 ,("ones", T.pack $ show o)],
-                  if (o `rem` 2) == 1 then "odd" else "even")
+              [ let keyvals = [("millions", T.pack $ show m)
+                              ,("thousands", T.pack $ show t)
+                              ,("hundreds", T.pack $ show h)
+                              ,("tens", T.pack $ show d)
+                              ,("ones", T.pack $ show o)]
+                    value = if (o `rem` 2) == 1 then "odd" else "even"
+                in (keyvals, value)
               | m <- [0..2 :: Int]
               , t <- [0..2 :: Int]
               , h <- [1..2 :: Int]

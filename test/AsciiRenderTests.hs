@@ -57,28 +57,28 @@ testAsciiRendering =
     [
       testCase "empty table" $
       cmpTables "empty table" (KTRA.render cfg0 kvi0) [sq|
-@@@@
+****
 | Value |
 +-------+
-@@@@
+****
 |]
 
     , testCase "empty table with blanks" $
       cmpTables "empty table" (KTRA.render cfgWBlankRows kvi0) [sq|
-@@@@
+****
 | Value |
 +-------+
 |       |
-@@@@
+****
 |]
 
     , testCase "empty table with labels" $
       let kvi = mempty & KVI.keyVals @Float .~ [ ("foo", []), ("dog", []) ]
       in cmpTables "empty table with labels" (KTRA.render cfg0 kvi) [sq|
-@@@@
+****
 | foo | dog | Value |
 +-----+-----+-------+
-@@@@|]
+****|]
 
     , testCase "add key" $
       let t0 = mempty & KVI.keyVals .~ [ ("foo", ["bar", "baz"]) ] :: KVI.KVITable Text
@@ -89,12 +89,12 @@ testAsciiRendering =
                         , ([ "baz", "woof"], "yo")
                         ]
             cmpTables "add key" (KTRA.render cfg0 t1) [sq|
-@@@@
+****
 | foo |  dog | Value |
 +-----+------+-------+
 | bar |      |    hi |
 | baz | woof |    yo |
-@@@@|]
+****|]
 
 
     , testCase "deep add" $
@@ -110,18 +110,18 @@ testAsciiRendering =
                KVI.insert [ ("foo", "bar"), ("moon", "pie") ] "hi"
                t0
       in cmpTables "add key" (KTRA.render cfg0 t1) [sq|
-@@@@
+****
 |  foo | moon |     dog |       says |
 +------+------+---------+------------+
 | Bill |  Ted | arf arf | Excellent! |
 |  bar |  pie |       ? |         hi |
 |  baz | beam |    woof |         yo |
-@@@@|]
+****|]
 
     , testCase "medium sized table render, sorted" $
       cmpTables "medium table"
       (KTRA.render (cfg0 { KTR.sortKeyVals = True }) mediumKVI) [sq|
-@@@@
+****
 | compiler | debug | optimization | Value |
 +----------+-------+--------------+-------+
 |     gcc7 |    no |            0 |   bad |
@@ -138,12 +138,12 @@ testAsciiRendering =
 |   clang7 |   yes |            3 |  good |
 |  clang10 |    no |            3 |  good |
 |  clang10 |   yes |            3 |  good |
-@@@@|]
+****|]
 
     , testCase "medium sized table render, unsorted" $
       cmpTables "medium table"
       (KTRA.render (cfg0 { KTR.sortKeyVals = False }) mediumKVI) [sq|
-@@@@
+****
 | compiler | debug | optimization | Value |
 +----------+-------+--------------+-------+
 |     gcc7 |   yes |            0 |  good |
@@ -160,13 +160,13 @@ testAsciiRendering =
 |   clang7 |    no |            0 |  good |
 |   clang7 |    no |            1 |  good |
 |   clang7 |    no |            3 |  good |
-@@@@|]
+****|]
 
     , testCase "medium table, sorted, blank, row skip, no repeats" $
       cmpTables "medium table"
       (KTRA.render (cfg0 { KTR.sortKeyVals = True
                          , KTR.rowRepeat = False }) mediumKVI) [sq|
-@@@@
+****
 | compiler | debug | optimization | Value |
 +----------+-------+--------------+-------+
 |     gcc7 |    no |            0 |   bad |
@@ -183,7 +183,7 @@ testAsciiRendering =
 |          |   yes |            3 |  good |
 |  clang10 |    no |            3 |  good |
 |          |   yes |            3 |  good |
-@@@@|]
+****|]
 
     , testCase "medium table, sorted, blank row skip, no repeats, group unknown" $
       cmpTables "medium table s 0brow 0rep [unknown]"
@@ -191,7 +191,7 @@ testAsciiRendering =
                          , KTR.rowRepeat = False
                          , KTR.rowGroup = ["unknown"]
                          }) mediumKVI) [sq|
-@@@@
+****
 | compiler | debug | optimization | Value |
 +----------+-------+--------------+-------+
 |     gcc7 |    no |            0 |   bad |
@@ -208,7 +208,7 @@ testAsciiRendering =
 |          |   yes |            3 |  good |
 |  clang10 |    no |            3 |  good |
 |          |   yes |            3 |  good |
-@@@@|]
+****|]
 
     , testCase "medium table, sorted, blank row skip, no repeats, group compiler" $
       cmpTables "medium table s 0brow 0rep [unknown]"
@@ -216,7 +216,7 @@ testAsciiRendering =
                          , KTR.rowRepeat = False
                          , KTR.rowGroup = ["compiler"]
                          }) mediumKVI) [sq|
-@@@@
+****
 | compiler | debug | optimization | Value |
 +----------+-------+--------------+-------+
 |     gcc7 |    no |            0 |   bad |
@@ -238,7 +238,7 @@ testAsciiRendering =
 |  clang10 |    no |            3 |  good |
 |          |   yes |            3 |  good |
 +----------+-------+--------------+-------+
-@@@@|]
+****|]
 
     , testCase "medium table, sorted, blank row skip, no repeats, multi-group" $
       cmpTables "medium table s 0brow 0rep [compiler,debug]"
@@ -246,7 +246,7 @@ testAsciiRendering =
                          , KTR.rowRepeat = False
                          , KTR.rowGroup = ["unknown", "compiler", "unk", "debug", "huh"]
                          }) mediumKVI) [sq|
-@@@@
+****
 | compiler | debug | optimization | Value |
 +----------+-------+--------------+-------+
 |     gcc7 |    no |            0 |   bad |
@@ -271,13 +271,13 @@ testAsciiRendering =
 |          |-------+--------------+-------+
 |          |   yes |            3 |  good |
 +----------+-------+--------------+-------+
-@@@@|]
+****|]
 
     , testCase "medium table, sorted, blank" $
       cmpTables "medium table"
       (KTRA.render (cfg0 { KTR.sortKeyVals = True
                          , KTR.hideBlankRows = False }) mediumKVI) [sq|
-@@@@
+****
 | compiler | debug | optimization | Value |
 +----------+-------+--------------+-------+
 |     gcc7 |    no |            0 |   bad |
@@ -310,14 +310,14 @@ testAsciiRendering =
 |  clang10 |   yes |            0 |       |
 |  clang10 |   yes |            1 |       |
 |  clang10 |   yes |            3 |  good |
-@@@@|]
+****|]
 
     , testCase "medium sized table render, sorted, no blank, colstack unknown" $
       cmpTables "medium table s 0blnk colstk=unknown"
       (KTRA.render (cfg0 { KTR.sortKeyVals = True
                          , KTR.colStackAt  = Just "unknown"
                          }) mediumKVI) [sq|
-@@@@
+****
 | compiler | debug | optimization | Value |
 +----------+-------+--------------+-------+
 |     gcc7 |    no |            0 |   bad |
@@ -334,7 +334,7 @@ testAsciiRendering =
 |   clang7 |   yes |            3 |  good |
 |  clang10 |    no |            3 |  good |
 |  clang10 |   yes |            3 |  good |
-@@@@|]
+****|]
 
     , testCase "medium sized table render, sorted, !blank, colstk optimization" $
       cmpTables "medium table s 0blnk colstk=optimization"
@@ -342,7 +342,7 @@ testAsciiRendering =
                          , KTR.hideBlankRows = True
                          , KTR.colStackAt  = Just "optimization"
                          }) mediumKVI) [sq|
-@@@@
+****
 | compiler | debug |    0 |    1 |    3 | <- optimization
 +----------+-------+------+------+------+
 |     gcc7 |    no |  bad | good |      |
@@ -353,7 +353,7 @@ testAsciiRendering =
 |   clang7 |   yes |      |      | good |
 |  clang10 |    no |      |      | good |
 |  clang10 |   yes |      |      | good |
-@@@@|]
+****|]
 
     , testCase "medium, sorted, !blank, !row rpt, rgrp compiler colstk optimization" $
       cmpTables "medium table s 0blnk colstk=optimization rowgrp=compiler"
@@ -363,7 +363,7 @@ testAsciiRendering =
                          , KTR.rowRepeat   = False
                          , KTR.rowGroup    = [ "compiler" ]
                          }) mediumKVI) [sq|
-@@@@
+****
 | compiler | debug |    0 |    1 |    3 | <- optimization
 +----------+-------+------+------+------+
 |     gcc7 |    no |  bad | good |      |
@@ -379,7 +379,7 @@ testAsciiRendering =
 |  clang10 |    no |      |      | good |
 |          |   yes |      |      | good |
 +----------+-------+------+------+------+
-@@@@|]
+****|]
 
     , testCase "medium sized table render, sorted, !blank, equisize, colstack debug" $
       cmpTables "medium table s 0blnk equisize colstk=debug"
@@ -388,7 +388,7 @@ testAsciiRendering =
                            , KTR.equisizedCols = True
                            , KTR.colStackAt  = Just "debug"
                            }) mediumKVI) [sq|
-@@@@
+****
 | compiler | _______ no _______ | ______ yes _______ | <- debug
 |          |    0 |    1 |    3 |    0 |    1 |    3 | <- optimization
 +----------+------+------+------+------+------+------+
@@ -397,7 +397,7 @@ testAsciiRendering =
 |   clang6 |      |      |      |   ok |      |      |
 |   clang7 | good | good | good |      |      | good |
 |  clang10 |      |      | good |      |      | good |
-@@@@|]
+****|]
 
     , testCase "medium sized table render, sorted, !blank, fitsize, colstack debug" $
       cmpTables "medium table s 0blnk fitsize colstk=debug"
@@ -406,7 +406,7 @@ testAsciiRendering =
                            , KTR.equisizedCols = False
                            , KTR.colStackAt  = Just "debug"
                            }) mediumKVI) [sq|
-@@@@
+****
 | compiler | _______ no _______ | ______ yes ______ | <- debug
 |          |    0 |    1 |    3 |    0 |   1 |    3 | <- optimization
 +----------+------+------+------+------+-----+------+
@@ -415,7 +415,7 @@ testAsciiRendering =
 |   clang6 |      |      |      |   ok |     |      |
 |   clang7 | good | good | good |      |     | good |
 |  clang10 |      |      | good |      |     | good |
-@@@@|]
+****|]
 
     , testCaseSteps "small table right aligned" $ \step ->
       let tbl = foldl KVI.foldlInsert
@@ -432,23 +432,23 @@ testAsciiRendering =
             step "ASCII rendering unsorted"
             cmpTables "small table right aligned unsorted"
               (KTRA.render (cfg0 { KTR.sortKeyVals = False }) tbl) [sq|
-@@@@
+****
 | id |         name |
 +----+--------------+
 |  1 |          Sam |
 |  3 | Jack Gabriel |
 |  2 |        Layla |
-@@@@|]
+****|]
             step "ASCII rendering sorted"
             cmpTables "small table right aligned sorted"
               (KTRA.render (cfg0 { KTR.sortKeyVals = True }) tbl) [sq|
-@@@@
+****
 | id |         name |
 +----+--------------+
 |  1 |          Sam |
 |  2 |        Layla |
 |  3 | Jack Gabriel |
-@@@@|]
+****|]
 
     , testCase "small multi-column float value table rendering" $
       let tbl = foldl KVI.foldlInsert
@@ -463,7 +463,7 @@ testAsciiRendering =
                 ]
       in cmpTables "small table float value table"
          (KTRA.render (cfg0 { KTR.sortKeyVals = True }) tbl) [sq|
-@@@@
+****
 | City name | Area | Population | Annual Rainfall |
 +-----------+------+------------+-----------------+
 |  Adelaide | 1295 |    1158259 |           600.5 |
@@ -473,7 +473,7 @@ testAsciiRendering =
 | Melbourne | 1566 |    3806092 |           646.9 |
 |     Perth | 5386 |    1554769 |           869.4 |
 |    Sydney | 2058 |    4336374 |          1214.8 |
-@@@@|]
+****|]
 
     , testCase "big table grouped sorted" $
       cmpTables "big table grouped sorted"
@@ -481,36 +481,7 @@ testAsciiRendering =
                          , KTR.rowRepeat = False
                          , KTR.rowGroup = [ "Location", "Biome", "Category" ]
                          }) zooTable2)
-      [sq|
-@@@@
-|  Location |    Biome | Category |      Diet |    Name |     Subtype | Count |
-+-----------+----------+----------+-----------+---------+-------------+-------+
-|        LA |   Jungle |   Animal | Herbivore |   Hippo |             |     1 |
-|           |----------+----------+-----------+---------+-------------+-------+
-|           | Savannah |   Animal | Carnivore |    Lion |             |     4 |
-|           |          |          | Herbivore | Giraffe |             |     2 |
-|           |          |          |           |   Rhino |             |     3 |
-+-----------+----------+----------+-----------+---------+-------------+-------+
-|     Miami |    Polar |     Bird | Carnivore | Penguin |      Gentoo |    20 |
-|           |----------+----------+-----------+---------+-------------+-------+
-|           | Savannah |   Animal | Carnivore |    Lion |             |     2 |
-|           |          |          | Herbivore | Giraffe | Reticulated |     3 |
-+-----------+----------+----------+-----------+---------+-------------+-------+
-|  New York | Savannah |   Animal | Carnivore |    Lion |             |     3 |
-+-----------+----------+----------+-----------+---------+-------------+-------+
-| San Diego |   Jungle |   Animal |  Omnivore |    Bear |         Sun |     1 |
-|           |----------+----------+-----------+---------+-------------+-------+
-|           |   Plains |   Animal |  Omnivore |    Bear |       Black |     1 |
-|           |          |          |           |         |       Brown |     1 |
-|           |----------+----------+-----------+---------+-------------+-------+
-|           |    Polar |   Animal |  Omnivore |    Bear |       Polar |     1 |
-|           |          |----------+-----------+---------+-------------+-------+
-|           |          |     Bird | Carnivore | Penguin |     Emperor |     8 |
-|           |          |          |           |         |      Gentoo |     2 |
-|           |----------+----------+-----------+---------+-------------+-------+
-|           | Savannah |   Animal | Carnivore |    Lion |             |     9 |
-+-----------+----------+----------+-----------+---------+-------------+-------+
-@@@@|]
+      [uq_f|examples/zoo.md|]
 
     , testCase "big table grouped sorted no-subtype colstack" $
       let zt = KVI.fromList $
@@ -528,33 +499,7 @@ testAsciiRendering =
                             , KTR.colStackAt = Just "Name"
                             , KTR.equisizedCols = False
                             }) zt)
-         [sq|
-@@@@
-|  Location |    Biome | Category |      Diet | Bear | Giraffe | Hippo | Lion | Penguin | Rhino | <- Name
-+-----------+----------+----------+-----------+------+---------+-------+------+---------+-------+
-|        LA |   Jungle |   Animal | Herbivore |      |         |     1 |      |         |       |
-|           |----------+----------+-----------+------+---------+-------+------+---------+-------+
-|           | Savannah |   Animal | Carnivore |      |         |       |    4 |         |       |
-|           |          |          | Herbivore |      |       2 |       |      |         |     3 |
-+-----------+----------+----------+-----------+------+---------+-------+------+---------+-------+
-|     Miami |    Polar |     Bird | Carnivore |      |         |       |      |      20 |       |
-|           |----------+----------+-----------+------+---------+-------+------+---------+-------+
-|           | Savannah |   Animal | Carnivore |      |         |       |    2 |         |       |
-|           |          |          | Herbivore |      |       3 |       |      |         |       |
-+-----------+----------+----------+-----------+------+---------+-------+------+---------+-------+
-|  New York | Savannah |   Animal | Carnivore |      |         |       |    3 |         |       |
-+-----------+----------+----------+-----------+------+---------+-------+------+---------+-------+
-| San Diego |   Jungle |   Animal |  Omnivore |    1 |         |       |      |         |       |
-|           |----------+----------+-----------+------+---------+-------+------+---------+-------+
-|           |   Plains |   Animal |  Omnivore |    2 |         |       |      |         |       |
-|           |----------+----------+-----------+------+---------+-------+------+---------+-------+
-|           |    Polar |   Animal |  Omnivore |    1 |         |       |      |         |       |
-|           |          |----------+-----------+------+---------+-------+------+---------+-------+
-|           |          |     Bird | Carnivore |      |         |       |      |      10 |       |
-|           |----------+----------+-----------+------+---------+-------+------+---------+-------+
-|           | Savannah |   Animal | Carnivore |      |         |       |    9 |         |       |
-+-----------+----------+----------+-----------+------+---------+-------+------+---------+-------+
-@@@@|]
+         [uq2_f|examples/zoo.md|]
 
     , testCase "big table grouped sorted equisized" $
       cmpTables "big table grouped sorted equisized"
@@ -567,7 +512,7 @@ testAsciiRendering =
                          }) testedTable)
       [sq|
         # Note: no seplines under system because it wasn't included in the row_group
-@@@@
+****
 |        system |     Branch |   Strategy | ___ ghc844 ____ | ___ ghc865 ____ | ___ ghc882 ____ | ___ ghc890 ____ | <- ghcver
 |               |            |            |      N |      Y |      N |      Y |      N |      Y |      N |      Y | <- debug
 +---------------+------------+------------+--------+--------+--------+--------+--------+--------+--------+--------+
@@ -582,7 +527,7 @@ testAsciiRendering =
 |               |     master |      HEADs |        | FAIL*1 | FAIL*1 |        | FAIL*1 |        |        |        |
 |               |            | submodules |      + | FAIL*1 | FAIL*1 |        |        |        |        |        |
 |               |------------+------------+--------+--------+--------+--------+--------+--------+--------+--------+
-@@@@|]
+****|]
 
     , testCase "big table grouped sorted fitsize colstack=ghcver" $
       cmpTables "big table grouped sorted fitsize colstack=ghcver"
@@ -595,7 +540,7 @@ testAsciiRendering =
                          }) testedTable)
         [sq|
         # Note: no seplines under system because it wasn't included in the row_group
-@@@@
+****
 |        system |     Branch |   Strategy | _ ghc844 _ | _ ghc865 _ | _ ghc882 _ | ghc890 | <- ghcver
 |               |            |            | N |      Y |      N | Y |      N | Y |  N | Y | <- debug
 +---------------+------------+------------+---+--------+--------+---+--------+---+----+---+
@@ -610,7 +555,7 @@ testAsciiRendering =
 |               |     master |      HEADs |   | FAIL*1 | FAIL*1 |   | FAIL*1 |   |    |   |
 |               |            | submodules | + | FAIL*1 | FAIL*1 |   |        |   |    |   |
 |               |------------+------------+---+--------+--------+---+--------+---+----+---+
-@@@@|]
+****|]
 
     , testCase "big table grouped sorted fitsize colstack=Strategy" $
       cmpTables "big table grouped sorted fitsize colstack=Strategy"
@@ -623,7 +568,7 @@ testAsciiRendering =
                          }) testedTable)
         [sq|
         # Note: no seplines under system because it wasn't included in the row_group
-@@@@
+****
 |        system |     Branch | ___________________ HEADs ___________________ | ________________ submodules _________________ | <- Strategy
 |               |            | _ ghc844 _ | _ ghc865 _ | _ ghc882 _ | ghc890 | _ ghc844 _ | _ ghc865 _ | _ ghc882 _ | ghc890 | <- ghcver
 |               |            | N |      Y |      N | Y |      N | Y |  N | Y | N |      Y |      N | Y |      N | Y |  N | Y | <- debug
@@ -636,7 +581,7 @@ testAsciiRendering =
 |               |------------+---+--------+--------+---+--------+---+----+---+---+--------+--------+---+--------+---+----+---+
 |               |     master |   | FAIL*1 | FAIL*1 |   | FAIL*1 |   |    |   | + | FAIL*1 | FAIL*1 |   |        |   |    |   |
 |               |------------+---+--------+--------+---+--------+---+----+---+---+--------+--------+---+--------+---+----+---+
-@@@@|]
+****|]
 
     , testCase "nested table hide=blankRows,blankCols colstack=ones" $
       cmpTables "nested table hide=blankRows,blankCols colstack=ones"
@@ -648,7 +593,7 @@ testAsciiRendering =
                            , KTR.colStackAt = Just "ones"
                            }) nestedTable)
         [sq|
-@@@@
+****
 | millions | thousands | hundreds | tens |    0 |   1 | <- ones
 +----------+-----------+----------+------+------+-----+
 |        0 |         0 |        1 |    2 | even | odd |
@@ -669,7 +614,7 @@ testAsciiRendering =
 |          |           |        2 |    2 | even | odd |
 |          |         2 |        1 |    2 | even | odd |
 |          |           |        2 |    2 | even | odd |
-@@@@|]
+****|]
 
     , testCase "nested table colstack=tens" $
       cmpTables "nested table colstack=tens"
@@ -684,7 +629,7 @@ testAsciiRendering =
         -- without hideBlankCols true, this test would show a 0 value
         -- column for the tens stacked column.
         [sq|
-@@@@
+****
 | millions | thousands | hundreds | ___ 2 ____ | <- tens
 |          |           |          |    0 |   1 | <- ones
 +----------+-----------+----------+------+-----+
@@ -706,7 +651,7 @@ testAsciiRendering =
 |          |           |        2 | even | odd |
 |          |         2 |        1 | even | odd |
 |          |           |        2 | even | odd |
-@@@@|]
+****|]
 
     , testCase "nested table hide=blankCols,blankRows colstack=hundreds" $
       cmpTables "nested table hide-blankCols,blankRows colstack=hundreds"
@@ -717,22 +662,7 @@ testAsciiRendering =
                            , KTR.equisizedCols = False
                            , KTR.colStackAt = Just "hundreds"
                            }) nestedTable)
-        [sq|
-@@@@
-| millions | thousands | ___ 1 ____ | ___ 2 ____ | <- hundreds
-|          |           | ___ 2 ____ | ___ 2 ____ | <- tens
-|          |           |    0 |   1 |    0 |   1 | <- ones
-+----------+-----------+------+-----+------+-----+
-|        0 |         0 | even | odd | even | odd |
-|          |         1 | even | odd | even | odd |
-|          |         2 | even | odd | even | odd |
-|        1 |         0 | even | odd | even | odd |
-|          |         1 | even | odd | even | odd |
-|          |         2 | even | odd | even | odd |
-|        2 |         0 | even | odd | even | odd |
-|          |         1 | even | odd | even | odd |
-|          |         2 | even | odd | even | odd |
-@@@@|]
+        [uq_f|README.md|]
 
     , testCase "nested table hide=none colstack=hundreds" $
       cmpTables "nested table hide=none colstack=hundreds"
@@ -744,7 +674,7 @@ testAsciiRendering =
                            , KTR.colStackAt = Just "hundreds"
                            }) nestedTable)
         [sq|
-@@@@
+****
 | millions | thousands | _____ 0 _____ | _______ 1 ________ | _______ 2 ________ | <- hundreds
 |          |           | _ 0 _ | _ 2 _ | _ 0 _ | ___ 2 ____ | _ 0 _ | ___ 2 ____ | <- tens
 |          |           | 0 | 1 | 0 | 1 | 0 | 1 |    0 |   1 | 0 | 1 |    0 |   1 | <- ones
@@ -758,7 +688,7 @@ testAsciiRendering =
 |        2 |         0 |   |   |   |   |   |   | even | odd |   |   | even | odd |
 |          |         1 |   |   |   |   |   |   | even | odd |   |   | even | odd |
 |          |         2 |   |   |   |   |   |   | even | odd |   |   | even | odd |
-@@@@|]
+****|]
 
     , testCase "nested table hide=none colstack=hundreds equisized" $
       cmpTables "nested table hide=none colstack=hundreds equisized"
@@ -770,7 +700,7 @@ testAsciiRendering =
                            , KTR.colStackAt = Just "hundreds"
                            }) nestedTable)
         [sq|
-@@@@
+****
 | millions | thousands | ___________ 0 ___________ | ___________ 1 ___________ | ___________ 2 ___________ | <- hundreds
 |          |           | ____ 0 ____ | ____ 2 ____ | ____ 0 ____ | ____ 2 ____ | ____ 0 ____ | ____ 2 ____ | <- tens
 |          |           |    0 |    1 |    0 |    1 |    0 |    1 |    0 |    1 |    0 |    1 |    0 |    1 | <- ones
@@ -784,7 +714,7 @@ testAsciiRendering =
 |        2 |         0 |      |      |      |      |      |      | even |  odd |      |      | even |  odd |
 |          |         1 |      |      |      |      |      |      | even |  odd |      |      | even |  odd |
 |          |         2 |      |      |      |      |      |      | even |  odd |      |      | even |  odd |
-@@@@|]
+****|]
 
     , testCase "nested table hideBlank=rol,col colstack=thousands" $
       cmpTables "nested table hideBlank=row,col colstack=thousands"
@@ -795,17 +725,7 @@ testAsciiRendering =
                            , KTR.equisizedCols = False
                            , KTR.colStackAt = Just "thousands"
                            }) nestedTable)
-        [sq|
-@@@@
-| millions | __________ 0 __________ | __________ 1 __________ | __________ 2 __________ | <- thousands
-|          | ___ 1 ____ | ___ 2 ____ | ___ 1 ____ | ___ 2 ____ | ___ 1 ____ | ___ 2 ____ | <- hundreds
-|          | ___ 2 ____ | ___ 2 ____ | ___ 2 ____ | ___ 2 ____ | ___ 2 ____ | ___ 2 ____ | <- tens
-|          |    0 |   1 |    0 |   1 |    0 |   1 |    0 |   1 |    0 |   1 |    0 |   1 | <- ones
-+----------+------+-----+------+-----+------+-----+------+-----+------+-----+------+-----+
-|        0 | even | odd | even | odd | even | odd | even | odd | even | odd | even | odd |
-|        1 | even | odd | even | odd | even | odd | even | odd | even | odd | even | odd |
-|        2 | even | odd | even | odd | even | odd | even | odd | even | odd | even | odd |
-@@@@|]
+        [uq2_f|README.md|]
 
     , testCase "nested table hideBlank=rol,col" $
       cmpTables "nested table hideBlank=row,col"
@@ -815,47 +735,7 @@ testAsciiRendering =
                            , KTR.hideBlankRows = True
                            , KTR.equisizedCols = False
                            }) nestedTable)
-        [sq|
-@@@@
-| millions | thousands | hundreds | tens | ones | Value |
-+----------+-----------+----------+------+------+-------+
-|        0 |         0 |        1 |    2 |    0 |  even |
-|          |           |          |      |    1 |   odd |
-|          |           |        2 |    2 |    0 |  even |
-|          |           |          |      |    1 |   odd |
-|          |         1 |        1 |    2 |    0 |  even |
-|          |           |          |      |    1 |   odd |
-|          |           |        2 |    2 |    0 |  even |
-|          |           |          |      |    1 |   odd |
-|          |         2 |        1 |    2 |    0 |  even |
-|          |           |          |      |    1 |   odd |
-|          |           |        2 |    2 |    0 |  even |
-|          |           |          |      |    1 |   odd |
-|        1 |         0 |        1 |    2 |    0 |  even |
-|          |           |          |      |    1 |   odd |
-|          |           |        2 |    2 |    0 |  even |
-|          |           |          |      |    1 |   odd |
-|          |         1 |        1 |    2 |    0 |  even |
-|          |           |          |      |    1 |   odd |
-|          |           |        2 |    2 |    0 |  even |
-|          |           |          |      |    1 |   odd |
-|          |         2 |        1 |    2 |    0 |  even |
-|          |           |          |      |    1 |   odd |
-|          |           |        2 |    2 |    0 |  even |
-|          |           |          |      |    1 |   odd |
-|        2 |         0 |        1 |    2 |    0 |  even |
-|          |           |          |      |    1 |   odd |
-|          |           |        2 |    2 |    0 |  even |
-|          |           |          |      |    1 |   odd |
-|          |         1 |        1 |    2 |    0 |  even |
-|          |           |          |      |    1 |   odd |
-|          |           |        2 |    2 |    0 |  even |
-|          |           |          |      |    1 |   odd |
-|          |         2 |        1 |    2 |    0 |  even |
-|          |           |          |      |    1 |   odd |
-|          |           |        2 |    2 |    0 |  even |
-|          |           |          |      |    1 |   odd |
-@@@@|]
+        [uq3_f|README.md|]
 
     , testCase "nested table hideBlank=none" $
       cmpTables "nested table hideBlank=none"
@@ -866,7 +746,7 @@ testAsciiRendering =
                            , KTR.equisizedCols = False
                            }) nestedTable)
         [sq|
-@@@@
+****
 | millions | thousands | hundreds | tens | ones | Value |
 +----------+-----------+----------+------+------+-------+
 |        0 |         0 |        0 |    0 |    0 |       |
@@ -977,6 +857,6 @@ testAsciiRendering =
 |          |           |          |      |    1 |       |
 |          |           |          |    2 |    0 |  even |
 |          |           |          |      |    1 |   odd |
-@@@@|]
+****|]
 
       ]
