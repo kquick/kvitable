@@ -31,7 +31,7 @@ main = defaultMain $
            kvi1_1 = fromList $ take 2 listing1
            kvi1_2 = fromList $ drop 2 listing1
 
-           mediumKVI = foldl (\t (k,v) -> insert k v t)
+           mediumKVI = foldl foldlInsert
                        (mempty
                         & keyVals .~ [ ("compiler", [ "gcc7", "gcc8", "clang6", "clang10", "clang7" ])
                                      , ("debug", [ "yes", "no" ])
@@ -77,11 +77,11 @@ main = defaultMain $
                 kvi1 <> kvi1 @?= kvi1
 
                 step "join parts"
-                kvi1_2 <> kvi1_1 @?= kvi1  -- happens to be the right order
+                kvi1_1 <> kvi1_2 @?= kvi1  -- happens to be the right order
 
                 -- note: it is *not* the case that
                 --
-                -- >   kvi1_1 <> kvi1_2 == kvi1
+                -- >   kvi1_2 <> kvi1_1 == kvi1
                 --
                 -- because the keyvals from a semigroup operation are
                 -- built dynamically and this particular kvi1_1 /

@@ -12,6 +12,7 @@ module Data.KVITable
   , keyVals
   , valueColName
   , insert
+  , foldlInsert
   , Data.KVITable.filter
   , rows
   )
@@ -64,7 +65,7 @@ defaultKeyVal = ""
 -- keyVals sequence than either input table.
 
 instance Semigroup (KVITable v) where
-  a <> b = foldr (\(ks,v) t -> insert ks v t)
+  a <> b = foldl foldlInsert
            (mempty { valuecolName = valuecolName a
                    , keyvals = keyvals a
                    })
@@ -94,8 +95,9 @@ instance Traversable KVITable where
 
 instance GHC.Exts.IsList (KVITable v) where
   type Item (KVITable v) = (KeySpec, v)
-  fromList = foldr (\(ks,v) t -> insert ks v t) mempty
+  fromList = foldl foldlInsert mempty
   toList = GHC.Exts.toList . contents
+
 
 fromList :: [ GHC.Exts.Item (KVITable v) ] -> KVITable v
 fromList = GHC.Exts.fromList
@@ -212,6 +214,15 @@ insert keyspec val t =
               let vs' = if defaultKeyVal `elem` vs then vs else (L.sort $ defaultKeyVal : vs)
               in endset rkvs ((sk,sv):srs) (tspec <> [(k,defaultKeyVal)]) (kvbld <> [(k,vs')])
   in endset (keyvals t) keyspec [] []
+
+
+-- | The foldlInsert is a convenience function that can be specified
+-- as the function argument of a foldl operation over the list form of
+-- a KVITable to generate the associated KVITable.
+
+foldlInsert :: KVITable v -> (KeySpec, v) -> KVITable v
+foldlInsert t (k,v) = insert k v t
+
 
 -- | Filter table to retain only the elements that satisfy some predicate.
 
