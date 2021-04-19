@@ -40,9 +40,11 @@ library
   exposed-modules:     Data.KVITable
                      , Data.KVITable.Render
                      , Data.KVITable.Render.ASCII
+                     , Data.KVITable.Render.HTML
   -- other-modules:
   build-depends:       base >=4.14 && <4.15
                      , containers
+                     , lucid
                      , microlens
                      , prettyprinter
                      , text
@@ -54,12 +56,14 @@ test-suite test-kvitable
   GHC-options:         -fhide-source-paths
   main-is:             TestMain.hs
   other-modules:       AsciiRenderTests
+                     , HTMLRenderTests
                      , SampleTables
                      , TestQQDefs
   build-depends: base
-               , pretty-show
+               , html-parse
                , kvitable
                , microlens
+               , pretty-show
                , tasty
                , tasty-hunit
                , template-haskell

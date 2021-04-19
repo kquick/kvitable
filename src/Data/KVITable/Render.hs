@@ -2,11 +2,14 @@ module Data.KVITable.Render
   (
     RenderConfig(..)
   , defaultRenderConfig
+  , sortWithNums
   )
 where
 
-import Data.KVITable
-import Data.Text ( Text )
+import           Data.KVITable
+import qualified Data.List as L
+import           Data.Text ( Text )
+import qualified Data.Text as T
 
 
 defaultRenderConfig :: RenderConfig
@@ -55,3 +58,25 @@ data RenderConfig = RenderConfig
     -- ^ Caption to render for table for backends which support
     -- captions; otherwise ignored.
   }
+
+
+
+-- Sorting for KeyVals.  If the value starts or ends with a digit,
+-- then this should do a rough numeric sort on the expectation that
+-- the digits represent a version or some other numeric value.  As an
+-- approximation of a numeric sort, sort by word size and then string
+-- value.  This will result in [ "1", "2", "10", "50", "400" ], but
+-- would fail with [ "v1.0", "v2.0", "v3.0", "v2.0.5", "v1.0.0.3" ],
+-- but it's a reasonably fast heuristic and probably better than a
+-- straight ascii sort.
+
+sortWithNums :: [KeyVal] -> [KeyVal]
+sortWithNums kvs =
+  let skvs = zip (rank <$> kvs) kvs
+      rank e = if (not $ T.null e) &&
+                  or [ T.head e `elem` ['0'..'9']
+                     , T.last e `elem` ['0'..'9']
+                     ]
+               then T.length e
+               else 0
+  in snd <$> L.sort skvs

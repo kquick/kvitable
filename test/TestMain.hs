@@ -14,8 +14,9 @@ import           Data.KVITable
 
 import           Prelude hiding ( filter, lookup )
 
-import           SampleTables
 import           AsciiRenderTests
+import           HTMLRenderTests
+import           SampleTables
 
 
 main :: IO ()
@@ -205,6 +206,7 @@ main = defaultMain $
          , testGroup "rendering"
            [
              testAsciiRendering
+           , testHTMLRendering
            ]
 
          ]
