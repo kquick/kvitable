@@ -107,7 +107,7 @@ zooTable = foldl foldlInsert
               , ("Biome", "Polar")
               , ("Category", "Bird")
               , ("Diet", "Carnivore")
-              , ("Subtype", "Emporer")
+              , ("Subtype", "Emperor")
               , ("Name", "Penguin")], 8)
            , ([ ("Location", "San Diego")
               , ("Biome", "Polar")
@@ -182,7 +182,7 @@ testedTable = foldl foldlInsert
                    , ls "ghc882" "PR-feature" "N" "FAIL*1"
                    , ls "ghc865" "PR-feature" "N" "+"
                    , ls "ghc844" "develop" "N" "+"
-                   , ls "ghc844" "develop" "Y" "+"
+                   , lH "ghc844" "develop" "Y" "+"
                    , mH "ghc844" "develop" "N" "+"
                    ]
 
@@ -199,10 +199,10 @@ nestedTable = foldl foldlInsert
                  ,("hundreds", T.pack $ show h)
                  ,("tens", T.pack $ show d)
                  ,("ones", T.pack $ show o)],
-                  if (o `rem` 1) == 1 then "odd" else "even")
-              | m <- [0..3 :: Int]
-              , t <- [0..3 :: Int]
-              , h <- [1..3 :: Int]
-              , d <- [2..3 :: Int]
-              , o <- [0..2 :: Int]
+                  if (o `rem` 2) == 1 then "odd" else "even")
+              | m <- [0..2 :: Int]
+              , t <- [0..2 :: Int]
+              , h <- [1..2 :: Int]
+              , d <- [2..2 :: Int]
+              , o <- [0..1 :: Int]
               ]
