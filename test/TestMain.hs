@@ -15,6 +15,7 @@ import           Data.KVITable
 import           Prelude hiding ( filter, lookup )
 
 import           SampleTables
+import           AsciiRenderTests
 
 
 main :: IO ()
@@ -200,4 +201,10 @@ main = defaultMain $
                                 , ("Diet", "Carnivore"), ("Category", "Animal")
                                 , ("Biome", "Polar"), ("Subtype", "")
                                 ] zooTable2
+
+         , testGroup "rendering"
+           [
+             testAsciiRendering
+           ]
+
          ]
