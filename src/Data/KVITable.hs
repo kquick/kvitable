@@ -109,7 +109,7 @@ toList = GHC.Exts.toList
 
 keyVals :: Lens' (KVITable v) KeyVals
 keyVals f t = (\kvs ->
-                 t { keyvals = kvs
+                 t { keyvals = fmap L.sort <$> kvs
                    , contents =
                      let inKVS spec _ = inkv spec kvs
                          inkv [] [] = True
@@ -162,7 +162,9 @@ lookup keyspec t = case Map.lookup keyspec $ contents t of
 insert :: KeySpec -> v -> KVITable v -> KVITable v
 insert keyspec val t =
   let remainingKeyValDefaults = fmap (\(k,_) -> (k, defaultKeyVal))
-      addDefVal e@(k,vs) = if defaultKeyVal `elem` vs then e else (k,vs <> [defaultKeyVal])
+      addDefVal e@(k,vs) = if defaultKeyVal `elem` vs
+                           then e
+                           else (k, L.sort $ defaultKeyVal : vs)
       -- endset :: KeyVals -> KeySpec -> KeySpec -> KeyVals -> KVITable v
       endset rkv [] tspec kvbld =
         -- Reached the end of the user's keyspec but there are more
@@ -180,7 +182,10 @@ insert keyspec val t =
         -- existing table values should be pushed out to use the
         -- default values for the new keys in their keyspec.
         let spec' = tspec <> spec
-            keyvals' = kvbld <> (fmap (if null curTblList then (:[]) else (:[defaultKeyVal])) <$> spec)
+            keyvals' = kvbld <> (fmap (L.sort .
+                                       if null curTblList
+                                       then (:[])
+                                       else (:[defaultKeyVal])) <$> spec)
             curTblList = Map.toList $ contents t
             updTblList = fmap (\(ks,v) -> (ks <> remainingKeyValDefaults spec, v)) curTblList
         in t { contents = Map.insert spec' val $ Map.fromList updTblList
@@ -190,7 +195,7 @@ insert keyspec val t =
         if k == sk
         then let kv' = if sv `elem` vs
                        then kvbld <> [(k,vs)]
-                       else kvbld <> [(k,vs <> [sv])]
+                       else kvbld <> [(k, L.sort $ sv : vs)]
              in endset rkvs srs (tspec <> [(k,sv)]) kv'
         else
           -- re-arrange user spec crudely by throwing invalid
@@ -203,7 +208,7 @@ insert keyspec val t =
             if any (`elem` (fst <$> kvs)) (fst <$> srs)
             then endset kvs (srs <> [(sk,sv)]) tspec kvbld
             else
-              let vs' = if defaultKeyVal `elem` vs then vs else (vs <> [defaultKeyVal])
+              let vs' = if defaultKeyVal `elem` vs then vs else (L.sort $ defaultKeyVal : vs)
               in endset rkvs ((sk,sv):srs) (tspec <> [(k,defaultKeyVal)]) (kvbld <> [(k,vs')])
   in endset (keyvals t) keyspec [] []
 

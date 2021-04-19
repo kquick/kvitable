@@ -31,6 +31,27 @@ main = defaultMain $
            kvi1_1 = fromList $ take 2 listing1
            kvi1_2 = fromList $ drop 2 listing1
 
+           mediumKVI = foldl (\t (k,v) -> insert k v t)
+                       (mempty
+                        & keyVals .~ [ ("compiler", [ "gcc7", "gcc8", "clang6", "clang10", "clang7" ])
+                                     , ("debug", [ "yes", "no" ])
+                                     , ("optimization", [ "0", "1", "3" ])
+                                     ])
+                       [ ([("compiler", "gcc7"), ("debug", "yes"), ("optimization", "0")], "good")
+                       , ([("compiler", "gcc7"), ("debug", "no" ), ("optimization", "0")], "bad")
+                       , ([("compiler", "gcc7"), ("debug", "yes"), ("optimization", "3")], "ugly")
+                       , ([("compiler", "gcc8"), ("debug", "yes"), ("optimization", "0")], "good")
+                       , ([("compiler", "clang6"), ("debug", "yes"), ("optimization", "0")], "ok")
+                       , ([("compiler", "clang7"), ("debug", "no"), ("optimization", "1")], "good")
+                       , ([("compiler", "clang7"), ("debug", "no"), ("optimization", "3")], "good")
+                       , ([("compiler", "clang7"), ("debug", "yes"), ("optimization", "3")], "good")
+                       , ([("compiler", "clang10"), ("debug", "no"), ("optimization", "3")], "good")
+                       , ([("compiler", "clang10"), ("debug", "yes"), ("optimization", "3")], "good")
+                       , ([("compiler", "gcc8"), ("debug", "yes"), ("optimization", "3")], "true")
+                       , ([("compiler", "gcc8"), ("debug", "yes"), ("optimization", "1")], "bad")
+                       , ([("compiler", "clang7"), ("debug", "no"), ("optimization", "0")], "good")
+                       , ([("compiler", "gcc7"), ("debug", "no"), ("optimization", "1")], "good")
+                       ]
        in
          [
            testCase "empty table" $ (mempty :: KVITable Bool) @=? (mempty :: KVITable Bool)
@@ -97,8 +118,8 @@ main = defaultMain $
 
                 step "at start"
                 let t2 = insert [ ("moo", "dog") ] "oops" t1
-                rows t2 @?= [ ([ "bar", "cow" ], "hi")
-                            , ([ "",    "dog" ], "oops")
+                rows t2 @?= [ ([ "",    "dog" ], "oops")
+                            , ([ "bar", "cow" ], "hi")
                             ]
 
                 step "at end"
@@ -123,9 +144,9 @@ main = defaultMain $
                 step "update"
                 "says Value" @=? (kvi1 & valueColName %~ ("says " <>)) ^. valueColName
 
-         , testCase "keyVals fetch" $ [ ("foo", ["baz", "", "bar"])
+         , testCase "keyVals fetch" $ [ ("foo", ["", "bar", "baz"])
                                       , ("moo", ["cow"])
-                                      , ("goose", ["honk", ""])
+                                      , ("goose", ["", "honk"])
                                       ] @=? kvi1 ^. keyVals
 
          , testCaseSteps "lookup" $ \step ->
@@ -168,8 +189,27 @@ main = defaultMain $
                     insert [ ("foo", "baz"), ("moon", "beam"), ("dog", "woof") ] "yo" $
                     insert [ ("foo", "bar"), ("moon", "pie") ] "hi"
                     t0
-           in rows t1 @?= [ ([ "bar", "pie", "" ], "hi")
+           in rows t1 @?= [ ([ "Bill", "Ted", "arf arf" ], "Excellent!")
+                          , ([ "bar", "pie", "" ], "hi")
                           , ([ "baz", "beam", "woof"], "yo")
-                          , ([ "Bill", "Ted", "arf arf" ], "Excellent!")
                           ]
+
+         , testCase "medium sized table rows" $
+           rows mediumKVI @?=
+           [ ([ "clang10", "no", "3"], "good" )
+           , ([ "clang10", "yes", "3"], "good" )
+           , ([ "clang6", "yes", "0"], "ok" )
+           , ([ "clang7", "no", "0"], "good" )
+           , ([ "clang7", "no", "1"], "good" )
+           , ([ "clang7", "no", "3"], "good" )
+           , ([ "clang7", "yes", "3"], "good" )
+           , ([ "gcc7", "no", "0"], "bad" )
+           , ([ "gcc7", "no", "1"], "good" )
+           , ([ "gcc7", "yes", "0"], "good" )
+           , ([ "gcc7", "yes", "3"], "ugly" )
+           , ([ "gcc8", "yes", "0"], "good" )
+           , ([ "gcc8", "yes", "1"], "bad" )
+           , ([ "gcc8", "yes", "3"], "true" )
+           ]
+
          ]
