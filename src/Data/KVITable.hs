@@ -55,9 +55,11 @@ data KVITable v = KVITable
     -- KeyVal that should be used.
 
   , contents     :: Map.Map KeySpec v
-    -- The invariant for the KVITable is that each KeySpec contains
-    -- all keys listed in keyvals (in the same order) with the
-    -- defaultKeyVal for any keys not explicitly provided for that
+    -- ^ Internal contents of the KVITable
+
+    -- The invariant for the KVITable contents is that each KeySpec
+    -- contains all keys listed in keyvals (in the same order) with
+    -- the defaultKeyVal for any keys not explicitly provided for that
     -- value.
 
   , valuecolName :: Text  -- ^ name of the value cells
