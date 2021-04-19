@@ -14,6 +14,11 @@ module Data.KVITable
   , insert
   , foldlInsert
   , Data.KVITable.filter
+  , adjust
+  , adjustWithKey
+  , delete
+  , update
+  , updateWithKey
   , rows
   )
 where
@@ -22,7 +27,6 @@ import           Data.Function ( on )
 import qualified Data.List as L
 import qualified Data.Map as Map
 import           Data.Text ( Text )
-import qualified Data.Text as T
 import qualified GHC.Exts
 import           Lens.Micro ( Lens' )
 
@@ -143,16 +147,16 @@ lookup keyspec t = case Map.lookup keyspec $ contents t of
                      Just v -> Just v
                      Nothing ->
                        -- keyspec might be under-specified or in a different order
-                       let ks = foldl keyandval [] (keyvals t)
-                           keyandval s (k,vs) = case L.lookup k keyspec of
-                             Just v -> if v `elem` vs
-                                       then s <> [(k,v)]
-                                       else [("Lookup key " <>
-                                               k <> " value of " <> v <>
-                                               " not in known values for that key: "
-                                             , T.pack $ show vs)]  -- bogus to fail the lookup below
-                             Nothing -> s <> [(k, defaultKeyVal)]
+                       let ks = normalizeKeySpec t keyspec
                        in Map.lookup ks $ contents t
+
+normalizeKeySpec :: KVITable v -> KeySpec -> KeySpec
+normalizeKeySpec t keyspec =
+  let keyandval s (k,vs) = case L.lookup k keyspec of
+        Just v -> if v `elem` vs then s <> [(k,v)]
+                  else s -- no level added, so this should never match in the Map
+        Nothing -> s <> [(k, defaultKeyVal)]
+  in foldl keyandval [] (keyvals t)
 
 -- | Inserts a new cell value into the table at the specified keyspec
 -- location.  The keyspec may be minimally specified and out-of-order.
@@ -224,14 +228,53 @@ foldlInsert :: KVITable v -> (KeySpec, v) -> KVITable v
 foldlInsert t (k,v) = insert k v t
 
 
--- | Filter table to retain only the elements that satisfy some predicate.
+-- | Filter 'KVITable' to retain only the elements that satisfy some predicate.
 
 filter :: ((KeySpec, v) -> Bool) -> KVITable v -> KVITable v
 filter f t = foldl chkInsert (emptyClone t) $ toList t
   where emptyClone o = o { contents = mempty }
         chkInsert o (k,v) = if f (k,v) then insert k v o else o
 
--- | The 'rows' function returns a set of rows for the KVITable as a
+-- | Delete the value at the specified keyspec location in the
+-- 'KVITable'.  If the keyspec does not exist, the original table is
+-- returned.
+
+delete :: KeySpec -> KVITable v -> KVITable v
+delete k t = t { contents = Map.delete (normalizeKeySpec t k) $ contents t }
+
+-- | Adjust a value at the specified keyspec; return the original
+-- 'KVITable' if that keyspec is not found in the table.
+
+adjustWithKey :: (KeySpec -> v -> v) -> KeySpec -> KVITable v -> KVITable v
+adjustWithKey f k t =
+  t { contents = Map.adjustWithKey f (normalizeKeySpec t k) $ contents t }
+
+-- | Adjust a value at the specified keyspec; return the original
+-- 'KVITable' if that keyspec is not found in the table.
+
+adjust :: (v -> v) -> KeySpec -> KVITable v -> KVITable v
+adjust f k t = t { contents = Map.adjust f (normalizeKeySpec t k) $ contents t }
+
+-- | Update the 'KVITable' to remove or set a new value for the
+-- specified entry if the updating function returns @Nothing@ or @Just
+-- v@, respectively.  The update function is passed both the keyspec
+-- and the current value at that key.  If the value does not exist in
+-- the table, the original table is returned.
+
+updateWithKey :: (KeySpec -> v -> Maybe v) -> KeySpec -> KVITable v -> KVITable v
+updateWithKey f k t =
+  t { contents = Map.updateWithKey f (normalizeKeySpec t k) $ contents t }
+
+-- | Update the 'KVITable' to remove or set a new value for the
+-- specified entry if the updating function returns @Nothing@ or @Just
+-- v@, respectively.  The update function is passed the value for the
+-- keyspec to be updated. If the value does not exist in the table,
+-- the original table is returned.
+
+update :: (v -> Maybe v) -> KeySpec -> KVITable v -> KVITable v
+update f k t = t { contents = Map.update f (normalizeKeySpec t k) $ contents t }
+
+-- | The 'rows' function returns a set of rows for the 'KVITable' as a
 -- list structure, where each list entry is a different row.  A row
 -- consists of the /values/ of the keys for that row followed by the
 -- value of the entry (to get the names of the keys, use 'keyVals').
