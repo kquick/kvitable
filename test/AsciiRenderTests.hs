@@ -638,8 +638,8 @@ testAsciiRendering =
 |               |------------+---+--------+--------+---+--------+---+----+---+---+--------+--------+---+--------+---+----+---+
 @@@@|]
 
-    , testCase "nested table colstack=ones" $
-      cmpTables "hested table colstack=ones"
+    , testCase "nested table hide=blankRows,blankCols colstack=ones" $
+      cmpTables "nested table hide=blankRows,blankCols colstack=ones"
         (KTRA.render (cfg0 { KTR.sortKeyVals = True
                            , KTR.rowRepeat = False
                            , KTR.hideBlankCols = True
@@ -672,7 +672,7 @@ testAsciiRendering =
 @@@@|]
 
     , testCase "nested table colstack=tens" $
-      cmpTables "hested table colstack=tens"
+      cmpTables "nested table colstack=tens"
         (KTRA.render (cfg0 { KTR.sortKeyVals = True
                            , KTR.rowRepeat = False
                            , KTR.hideBlankCols = True
@@ -706,6 +706,277 @@ testAsciiRendering =
 |          |           |        2 | even | odd |
 |          |         2 |        1 | even | odd |
 |          |           |        2 | even | odd |
+@@@@|]
+
+    , testCase "nested table hide=blankCols,blankRows colstack=hundreds" $
+      cmpTables "nested table hide-blankCols,blankRows colstack=hundreds"
+        (KTRA.render (cfg0 { KTR.sortKeyVals = True
+                           , KTR.rowRepeat = False
+                           , KTR.hideBlankCols = True
+                           , KTR.hideBlankRows = True
+                           , KTR.equisizedCols = False
+                           , KTR.colStackAt = Just "hundreds"
+                           }) nestedTable)
+        [sq|
+@@@@
+| millions | thousands | ___ 1 ____ | ___ 2 ____ | <- hundreds
+|          |           | ___ 2 ____ | ___ 2 ____ | <- tens
+|          |           |    0 |   1 |    0 |   1 | <- ones
++----------+-----------+------+-----+------+-----+
+|        0 |         0 | even | odd | even | odd |
+|          |         1 | even | odd | even | odd |
+|          |         2 | even | odd | even | odd |
+|        1 |         0 | even | odd | even | odd |
+|          |         1 | even | odd | even | odd |
+|          |         2 | even | odd | even | odd |
+|        2 |         0 | even | odd | even | odd |
+|          |         1 | even | odd | even | odd |
+|          |         2 | even | odd | even | odd |
+@@@@|]
+
+    , testCase "nested table hide=none colstack=hundreds" $
+      cmpTables "nested table hide=none colstack=hundreds"
+        (KTRA.render (cfg0 { KTR.sortKeyVals = True
+                           , KTR.rowRepeat = False
+                           , KTR.hideBlankCols = False
+                           , KTR.hideBlankRows = False
+                           , KTR.equisizedCols = False
+                           , KTR.colStackAt = Just "hundreds"
+                           }) nestedTable)
+        [sq|
+@@@@
+| millions | thousands | _____ 0 _____ | _______ 1 ________ | _______ 2 ________ | <- hundreds
+|          |           | _ 0 _ | _ 2 _ | _ 0 _ | ___ 2 ____ | _ 0 _ | ___ 2 ____ | <- tens
+|          |           | 0 | 1 | 0 | 1 | 0 | 1 |    0 |   1 | 0 | 1 |    0 |   1 | <- ones
++----------+-----------+---+---+---+---+---+---+------+-----+---+---+------+-----+
+|        0 |         0 |   |   |   |   |   |   | even | odd |   |   | even | odd |
+|          |         1 |   |   |   |   |   |   | even | odd |   |   | even | odd |
+|          |         2 |   |   |   |   |   |   | even | odd |   |   | even | odd |
+|        1 |         0 |   |   |   |   |   |   | even | odd |   |   | even | odd |
+|          |         1 |   |   |   |   |   |   | even | odd |   |   | even | odd |
+|          |         2 |   |   |   |   |   |   | even | odd |   |   | even | odd |
+|        2 |         0 |   |   |   |   |   |   | even | odd |   |   | even | odd |
+|          |         1 |   |   |   |   |   |   | even | odd |   |   | even | odd |
+|          |         2 |   |   |   |   |   |   | even | odd |   |   | even | odd |
+@@@@|]
+
+    , testCase "nested table hide=none colstack=hundreds equisized" $
+      cmpTables "nested table hide=none colstack=hundreds equisized"
+        (KTRA.render (cfg0 { KTR.sortKeyVals = True
+                           , KTR.rowRepeat = False
+                           , KTR.hideBlankCols = False
+                           , KTR.hideBlankRows = False
+                           , KTR.equisizedCols = True
+                           , KTR.colStackAt = Just "hundreds"
+                           }) nestedTable)
+        [sq|
+@@@@
+| millions | thousands | ___________ 0 ___________ | ___________ 1 ___________ | ___________ 2 ___________ | <- hundreds
+|          |           | ____ 0 ____ | ____ 2 ____ | ____ 0 ____ | ____ 2 ____ | ____ 0 ____ | ____ 2 ____ | <- tens
+|          |           |    0 |    1 |    0 |    1 |    0 |    1 |    0 |    1 |    0 |    1 |    0 |    1 | <- ones
++----------+-----------+------+------+------+------+------+------+------+------+------+------+------+------+
+|        0 |         0 |      |      |      |      |      |      | even |  odd |      |      | even |  odd |
+|          |         1 |      |      |      |      |      |      | even |  odd |      |      | even |  odd |
+|          |         2 |      |      |      |      |      |      | even |  odd |      |      | even |  odd |
+|        1 |         0 |      |      |      |      |      |      | even |  odd |      |      | even |  odd |
+|          |         1 |      |      |      |      |      |      | even |  odd |      |      | even |  odd |
+|          |         2 |      |      |      |      |      |      | even |  odd |      |      | even |  odd |
+|        2 |         0 |      |      |      |      |      |      | even |  odd |      |      | even |  odd |
+|          |         1 |      |      |      |      |      |      | even |  odd |      |      | even |  odd |
+|          |         2 |      |      |      |      |      |      | even |  odd |      |      | even |  odd |
+@@@@|]
+
+    , testCase "nested table hideBlank=rol,col colstack=thousands" $
+      cmpTables "nested table hideBlank=row,col colstack=thousands"
+        (KTRA.render (cfg0 { KTR.sortKeyVals = True
+                           , KTR.rowRepeat = False
+                           , KTR.hideBlankCols = True
+                           , KTR.hideBlankRows = True
+                           , KTR.equisizedCols = False
+                           , KTR.colStackAt = Just "thousands"
+                           }) nestedTable)
+        [sq|
+@@@@
+| millions | __________ 0 __________ | __________ 1 __________ | __________ 2 __________ | <- thousands
+|          | ___ 1 ____ | ___ 2 ____ | ___ 1 ____ | ___ 2 ____ | ___ 1 ____ | ___ 2 ____ | <- hundreds
+|          | ___ 2 ____ | ___ 2 ____ | ___ 2 ____ | ___ 2 ____ | ___ 2 ____ | ___ 2 ____ | <- tens
+|          |    0 |   1 |    0 |   1 |    0 |   1 |    0 |   1 |    0 |   1 |    0 |   1 | <- ones
++----------+------+-----+------+-----+------+-----+------+-----+------+-----+------+-----+
+|        0 | even | odd | even | odd | even | odd | even | odd | even | odd | even | odd |
+|        1 | even | odd | even | odd | even | odd | even | odd | even | odd | even | odd |
+|        2 | even | odd | even | odd | even | odd | even | odd | even | odd | even | odd |
+@@@@|]
+
+    , testCase "nested table hideBlank=rol,col" $
+      cmpTables "nested table hideBlank=row,col"
+        (KTRA.render (cfg0 { KTR.sortKeyVals = True
+                           , KTR.rowRepeat = False
+                           , KTR.hideBlankCols = True
+                           , KTR.hideBlankRows = True
+                           , KTR.equisizedCols = False
+                           }) nestedTable)
+        [sq|
+@@@@
+| millions | thousands | hundreds | tens | ones | Value |
++----------+-----------+----------+------+------+-------+
+|        0 |         0 |        1 |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |           |        2 |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |         1 |        1 |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |           |        2 |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |         2 |        1 |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |           |        2 |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|        1 |         0 |        1 |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |           |        2 |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |         1 |        1 |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |           |        2 |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |         2 |        1 |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |           |        2 |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|        2 |         0 |        1 |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |           |        2 |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |         1 |        1 |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |           |        2 |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |         2 |        1 |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |           |        2 |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+@@@@|]
+
+    , testCase "nested table hideBlank=none" $
+      cmpTables "nested table hideBlank=none"
+        (KTRA.render (cfg0 { KTR.sortKeyVals = True
+                           , KTR.rowRepeat = False
+                           , KTR.hideBlankCols = False
+                           , KTR.hideBlankRows = False
+                           , KTR.equisizedCols = False
+                           }) nestedTable)
+        [sq|
+@@@@
+| millions | thousands | hundreds | tens | ones | Value |
++----------+-----------+----------+------+------+-------+
+|        0 |         0 |        0 |    0 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |          |    2 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |        1 |    0 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |          |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |           |        2 |    0 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |          |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |         1 |        0 |    0 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |          |    2 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |        1 |    0 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |          |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |           |        2 |    0 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |          |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |         2 |        0 |    0 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |          |    2 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |        1 |    0 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |          |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |           |        2 |    0 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |          |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|        1 |         0 |        0 |    0 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |          |    2 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |        1 |    0 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |          |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |           |        2 |    0 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |          |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |         1 |        0 |    0 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |          |    2 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |        1 |    0 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |          |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |           |        2 |    0 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |          |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |         2 |        0 |    0 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |          |    2 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |        1 |    0 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |          |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |           |        2 |    0 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |          |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|        2 |         0 |        0 |    0 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |          |    2 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |        1 |    0 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |          |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |           |        2 |    0 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |          |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |         1 |        0 |    0 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |          |    2 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |        1 |    0 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |          |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |           |        2 |    0 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |          |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |         2 |        0 |    0 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |          |    2 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |        1 |    0 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |          |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |           |        2 |    0 |    0 |       |
+|          |           |          |      |    1 |       |
+|          |           |          |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
 @@@@|]
 
       ]
