@@ -45,7 +45,7 @@
             html-parse = mkHaskell "html-parse" html-parse-src {
               adjustDrv = args: drv:
                 let ghcv = args.ghcver or "ghc8104"; in
-                if builtins.compareVersions (builtins.trace ghcv pkgs.haskell.compiler."${ghcv}".version) "9.0" < 0
+                if builtins.compareVersions pkgs.haskell.compiler."${ghcv}".version "9.0" < 0
                 then drv
                 else pkgs.haskell.lib.doJailbreak drv;
             };
