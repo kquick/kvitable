@@ -9,6 +9,9 @@
 module Data.KVITable.Render.ASCII
   (
     render
+    -- re-export Render definitions to save the caller an additional import
+  , RenderConfig(..)
+  , defaultRenderConfig
   )
 where
 
