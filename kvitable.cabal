@@ -30,6 +30,7 @@ maintainer:          kquick@galois.com
 copyright:           Kevin Quick, 2021
 category:            Text
 build-type:          Simple
+tested-with:         GHC ==8.6.5 GHC ==8.8.4 GHC ==8.10.4 GHC ==9.0.1
 extra-source-files:  CHANGELOG.md
                    , examples/hundreds_all.md
                    , examples/zoo.md
@@ -38,19 +39,19 @@ extra-source-files:  CHANGELOG.md
 library
   hs-source-dirs:      src
   default-language:    Haskell2010
-  GHC-options:         -Wall -Wcompat -fhide-source-paths
+  GHC-options:         -Wall -Wcompat -Wincomplete-uni-patterns -Wpartial-fields -fhide-source-paths
   -- other-extensions:
   exposed-modules:     Data.KVITable
                      , Data.KVITable.Render
                      , Data.KVITable.Render.ASCII
                      , Data.KVITable.Render.HTML
   -- other-modules:
-  build-depends:       base >=4.14 && <4.15
-                     , containers
-                     , lucid
-                     , microlens
-                     , prettyprinter
-                     , text
+  build-depends:       base >=4.12 && <4.16
+                     , containers >= 0.6 && < 0.7
+                     , lucid  >= 2.9 && < 2.10
+                     , microlens >= 0.4 && < 0.5
+                     , prettyprinter >= 1.7 && < 1.8
+                     , text >= 1.2 && < 1.3
 
 test-suite test-kvitable
   type:                exitcode-stdio-1.0
