@@ -152,7 +152,7 @@ hdrvalstep cfg t steppath (key:keys) =
       superFmt sub = let FmtLine subcols = hdrFmt $ last $ fst sub
                      in if sum subcols == 0
                         then 0
-                        else length subcols
+                        else length $ L.filter (/= 0) subcols
       topfmt = FmtLine (superFmt <$> subhdrs)
       tophdr = HdrLine topfmt (Hdr 1 <$> titles) $ Just key
   in ( tophdr : subhdr_rollup, F.fold (snd <$> subTtlHdrs))
