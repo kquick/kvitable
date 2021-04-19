@@ -1,6 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies #-}
 
+-- | The 'KVITable' is similar to a 'Data.Map', but the keys for a
+-- 'KVITable' are made up of sequences of @Key=Val@ values.  The
+-- primary use of a 'KVITable' is for rendering the information in
+-- various configurations and formats, although it may be used like
+-- any other container.
+
 module Data.KVITable
   (
     KVITable(KVITable)
@@ -55,9 +61,6 @@ data KVITable v = KVITable
     -- value.
 
   , valuecolName :: Text  -- ^ name of the value cells
-
-  -- , entryFactory :: Maybe a -- ^ possible generator for unset cells
-  -- , kvFactory    :: Maybe (Key -> KeyVal)  -- ^ default KeyVal for Key
   }
 
 instance Eq v => Eq (KVITable v) where
@@ -71,9 +74,25 @@ instance Show v => Show (KVITable v) where
            ", valuecolName = " <> show (valuecolName t) <>
            "}"
 
+-- | The 'Key' is the first half of a tuple that makes up the list of
+-- keys (the 'KeySpec').  The second half is the 'KeyVal'.
 type Key = Text
-type KeyVal = Text -- KWQ: parameterize
+
+-- | The 'KeyVal' is the first half of a tuple that makes up the list of
+-- keys (the 'KeySpec').  The first half is the 'Key'.
+type KeyVal = Text
+
+-- | The 'KeySpec' is the list of tuples and defines the unique key
+-- for a value in the 'KVITable'.
 type KeySpec = [ (Key,  KeyVal ) ]
+
+-- | The 'KeyVals' specifies all valid values for a particular 'Key'
+-- in the 'KVITable'.  The set of 'KeyVals' can be provided at the
+-- initialization of the 'KVITable' to ensure specific values are
+-- considered (especially if rendering includes blank rows or
+-- columns); if entries are added to the table with a 'KeyVal'
+-- previously unknown for the 'Key', the 'KeyVals' for the table is
+-- automatically updated to include the new 'KeyVal'.
 type KeyVals = [ (Key, [KeyVal]) ]
 
 -- | The KVITable semigroup is left biased (same as Data.Map).  Note
@@ -92,8 +111,6 @@ instance Monoid (KVITable v) where
                     , keyvalGen = const ""
                     , contents = mempty
                     , valuecolName = "Value"
-                    -- , entryFactory = Nothing
-                    -- , kvFactory = Nothing
                     }
 
 instance Functor KVITable where
@@ -120,8 +137,12 @@ instance GHC.Exts.IsList (KVITable v) where
   toList = GHC.Exts.toList . contents
 
 
+-- | Converts a list of @([(Key,Val)], Value)@ tuples to a KVI table.
+
 fromList :: [ GHC.Exts.Item (KVITable v) ] -> KVITable v
 fromList = GHC.Exts.fromList
+
+-- | Converts a KVI table to a list of @([(Key,Val)], Value)@ tuples.
 
 toList :: KVITable v -> [ GHC.Exts.Item (KVITable v) ]
 toList = GHC.Exts.toList

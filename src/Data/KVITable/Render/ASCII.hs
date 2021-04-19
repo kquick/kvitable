@@ -3,6 +3,9 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 
+-- | This module provides the 'KVITable' 'render' function for
+-- rendering the table in a plain ASCII format.
+
 module Data.KVITable.Render.ASCII
   (
     render
@@ -21,6 +24,9 @@ import           Data.KVITable.Render
 
 import           Prelude hiding ( lookup )
 
+
+-- | Renders the specified table in ASCII format, using the specified
+-- 'RenderConfig' controls.
 
 render :: PP.Pretty v => RenderConfig -> KVITable v -> Text
 render cfg t =

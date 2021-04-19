@@ -2,6 +2,11 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 
+-- | This module provides the 'KVITable' 'render' function for
+-- rendering the table in a HTML table format.  The various HTML table
+-- entries have class designators that allow the user to provide CSS
+-- to adjust the appearance of the table.
+
 module Data.KVITable.Render.HTML
   (
     render
@@ -23,6 +28,11 @@ import           Data.KVITable.Render
 
 import           Prelude hiding ( lookup )
 
+
+-- | Renders the specified table in HTML format, using the specified
+-- 'RenderConfig' controls.  The output is only the @<table>@
+-- definition; it is intended to be embedded in a larger HTML
+-- document.
 
 render :: PP.Pretty v => RenderConfig -> KVITable v -> Text
 render cfg t =
