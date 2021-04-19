@@ -31,8 +31,9 @@ copyright:           Kevin Quick, 2021
 category:            Text
 build-type:          Simple
 extra-source-files:  CHANGELOG.md
-                   , examples/hundreds_noblank.md
+                   , examples/hundreds_all.md
                    , examples/zoo.md
+                   , README.md
 
 library
   hs-source-dirs:      src

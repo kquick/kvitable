@@ -673,22 +673,7 @@ testAsciiRendering =
                            , KTR.equisizedCols = False
                            , KTR.colStackAt = Just "hundreds"
                            }) nestedTable)
-        [sq|
-****
-| millions | thousands | _____ 0 _____ | _______ 1 ________ | _______ 2 ________ | <- hundreds
-|          |           | _ 0 _ | _ 2 _ | _ 0 _ | ___ 2 ____ | _ 0 _ | ___ 2 ____ | <- tens
-|          |           | 0 | 1 | 0 | 1 | 0 | 1 |    0 |   1 | 0 | 1 |    0 |   1 | <- ones
-+----------+-----------+---+---+---+---+---+---+------+-----+---+---+------+-----+
-|        0 |         0 |   |   |   |   |   |   | even | odd |   |   | even | odd |
-|          |         1 |   |   |   |   |   |   | even | odd |   |   | even | odd |
-|          |         2 |   |   |   |   |   |   | even | odd |   |   | even | odd |
-|        1 |         0 |   |   |   |   |   |   | even | odd |   |   | even | odd |
-|          |         1 |   |   |   |   |   |   | even | odd |   |   | even | odd |
-|          |         2 |   |   |   |   |   |   | even | odd |   |   | even | odd |
-|        2 |         0 |   |   |   |   |   |   | even | odd |   |   | even | odd |
-|          |         1 |   |   |   |   |   |   | even | odd |   |   | even | odd |
-|          |         2 |   |   |   |   |   |   | even | odd |   |   | even | odd |
-****|]
+        [uq_f|examples/hundreds_all.md|]
 
     , testCase "nested table hide=none colstack=hundreds equisized" $
       cmpTables "nested table hide=none colstack=hundreds equisized"
@@ -699,22 +684,7 @@ testAsciiRendering =
                            , KTR.equisizedCols = True
                            , KTR.colStackAt = Just "hundreds"
                            }) nestedTable)
-        [sq|
-****
-| millions | thousands | ___________ 0 ___________ | ___________ 1 ___________ | ___________ 2 ___________ | <- hundreds
-|          |           | ____ 0 ____ | ____ 2 ____ | ____ 0 ____ | ____ 2 ____ | ____ 0 ____ | ____ 2 ____ | <- tens
-|          |           |    0 |    1 |    0 |    1 |    0 |    1 |    0 |    1 |    0 |    1 |    0 |    1 | <- ones
-+----------+-----------+------+------+------+------+------+------+------+------+------+------+------+------+
-|        0 |         0 |      |      |      |      |      |      | even |  odd |      |      | even |  odd |
-|          |         1 |      |      |      |      |      |      | even |  odd |      |      | even |  odd |
-|          |         2 |      |      |      |      |      |      | even |  odd |      |      | even |  odd |
-|        1 |         0 |      |      |      |      |      |      | even |  odd |      |      | even |  odd |
-|          |         1 |      |      |      |      |      |      | even |  odd |      |      | even |  odd |
-|          |         2 |      |      |      |      |      |      | even |  odd |      |      | even |  odd |
-|        2 |         0 |      |      |      |      |      |      | even |  odd |      |      | even |  odd |
-|          |         1 |      |      |      |      |      |      | even |  odd |      |      | even |  odd |
-|          |         2 |      |      |      |      |      |      | even |  odd |      |      | even |  odd |
-****|]
+        [uq2_f|examples/hundreds_all.md|]
 
     , testCase "nested table hideBlank=rol,col colstack=thousands" $
       cmpTables "nested table hideBlank=row,col colstack=thousands"

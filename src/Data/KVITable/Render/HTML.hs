@@ -48,30 +48,37 @@ instance Monoid FmtLine where
 fmtAddColLeft :: Int -> FmtLine -> FmtLine
 fmtAddColLeft lspan (FmtLine col) = FmtLine $ lspan : col
 
-data FmtVal = Val Height Text | Hdr Height Text
+data FmtVal = Val Height LastInGroup Text
+            | Hdr Height LastInGroup Text
+            deriving Show
 type Height = Int
+type LastInGroup = Bool
 type RightLabel = Text
 
 fmtRender :: FmtLine -> [FmtVal] -> Maybe RightLabel -> Html ()
 fmtRender (FmtLine cols) vals mbRLabel = do
   tr_ [ class_ "kvitable_tr" ] $
     let excessColCnt = length cols - length vals
-        cell (w,Hdr h v) = let a = [ [ class_ "kvitable_th" ]
-                                   , if h == 1 then []
-                                     else [ rowspan_ $ T.pack $ show h ]
-                                   , if w == 1 then []
-                                     else [ colspan_ $ T.pack $ show w
-                                          , class_ " multicol" ]
-                                   ]
-                           in th_ (concat $ reverse a) (toHtml v)
-        cell (w,Val h v) = let a = [ [ class_ "kvitable_td" ]
-                                   , if h == 1 then []
-                                     else [ rowspan_ $ T.pack $ show h ]
-                                   , if w == 1 then []
-                                     else [ colspan_ $ T.pack $ show w
-                                          , class_ " multicol" ]
-                                   ]
-                           in td_ (concat $ reverse a) (toHtml v)
+        cell (w,Hdr h l v) =
+          let a = [ [ class_ "kvitable_th" ]
+                  , if h == 1 then []
+                    else [ rowspan_ $ T.pack $ show h ]
+                  , if w == 1 then []
+                    else [ colspan_ $ T.pack $ show w
+                         , class_ " multicol" ]
+                  , if l then [ class_ " last_in_group" ] else []
+                  ]
+          in th_ (concat $ reverse a) (toHtml v)
+        cell (w,Val h l v) =
+          let a = [ [ class_ "kvitable_td" ]
+                  , if h == 1 then []
+                    else [ rowspan_ $ T.pack $ show h ]
+                  , if w == 1 then []
+                    else [ colspan_ $ T.pack $ show w
+                         , class_ " multicol" ]
+                  , if l then [ class_ " last_in_group" ] else []
+                  ]
+          in td_ (concat $ reverse a) (toHtml v)
         labelMark = toHtmlRaw ("&nbsp;&larr;" :: Text)
         labelHtml = th_ [ class_ "rightlabel kvitable_th" ] .
                     (labelMark <>) .
@@ -107,7 +114,7 @@ renderHdrs cfg t keys =
 hdrstep :: PP.Pretty v
         => RenderConfig -> KVITable v -> [Key] -> ([HeaderLine], FmtLine)
 hdrstep _cfg t [] =
-  ( [ HdrLine (FmtLine [1]) [Hdr 1 $ t ^. valueColName] Nothing ]
+  ( [ HdrLine (FmtLine [1]) [Hdr 1 False $ t ^. valueColName] Nothing ]
   , FmtLine [1]
   )
 hdrstep cfg t (key:keys) =
@@ -117,7 +124,7 @@ hdrstep cfg t (key:keys) =
     let (nexthdrs, lowestfmt) = hdrstep cfg t keys
         (HdrLine fmt vals tr) = head nexthdrs -- safe: there were keys
         fmt' = fmtAddColLeft 1 fmt
-        val = Hdr (length nexthdrs) key
+        val = Hdr (length nexthdrs) False key
     in ( (HdrLine fmt' (val : vals) tr) : tail nexthdrs
        , fmtAddColLeft 1 lowestfmt
        )
@@ -137,7 +144,7 @@ hdrvalstep cfg t steppath (key:[]) =
                  then 0
                  else 1
       fmt = FmtLine $ fmap cwidth titles
-  in ( [ HdrLine fmt (Hdr 1 <$> titles) (Just key) ], fmt)
+  in ( [ HdrLine fmt (Hdr 1 False <$> titles) (Just key) ], fmt)
 hdrvalstep cfg t steppath (key:keys) =
   let titles = ordering $ fromMaybe [] $ L.lookup key $ t ^. keyVals
       ordering = if sortKeyVals cfg then sortWithNums else id
@@ -154,7 +161,7 @@ hdrvalstep cfg t steppath (key:keys) =
                         then 0
                         else length $ L.filter (/= 0) subcols
       topfmt = FmtLine (superFmt <$> subhdrs)
-      tophdr = HdrLine topfmt (Hdr 1 <$> titles) $ Just key
+      tophdr = HdrLine topfmt (Hdr 1 False <$> titles) $ Just key
   in ( tophdr : subhdr_rollup, F.fold (snd <$> subTtlHdrs))
 
 ----------------------------------------------------------------------
@@ -162,50 +169,56 @@ hdrvalstep cfg t steppath (key:keys) =
 renderSeq :: PP.Pretty v
           => RenderConfig -> FmtLine -> [Key] -> KVITable v -> Html ()
 renderSeq cfg fmt keys t =
-  mapM_ (flip (fmtRender fmt) Nothing . snd) $ htmlRows keys []
+  mapM_ (flip (fmtRender fmt) Nothing) $ htmlRows keys []
   where
-    mkVal ty = ty 1 . T.pack . show . PP.pretty
-    htmlRows :: [Key] -> KeySpec -> [ (Bool, [FmtVal]) ]
+    mkVal = Val 1 False . T.pack . show . PP.pretty
+    htmlRows :: [Key] -> KeySpec -> [ [FmtVal] ]
     htmlRows [] path =
       let v = lookup path t
           skip = case v of
             Nothing -> hideBlankRows cfg
             Just _ -> False
-          row = maybe (Val 1 "") (mkVal Val) v
-      in if skip then [] else [ (False, [row]) ]
+          row = maybe (Val 1 False "") mkVal v
+      in if skip then [] else [ [row] ]
     htmlRows (key:kseq) path
       | colStackAt cfg == Just key =
           let filterOrDefaultBlankRows =
-                fmap (fmap (fmap (maybe (Val 1 "") id))) .
+                fmap (fmap (maybe (Val 1 False "") id)) .
                 if hideBlankRows cfg
-                then L.filter (not . all isNothing . snd)
+                then L.filter (not . all isNothing)
                 else id
           in filterOrDefaultBlankRows $
-             [ (False, multivalRows (key:kseq) path) ]
+             [ multivalRows (key:kseq) path ]
       | otherwise =
           let keyvals = ordering $ fromMaybe [] $ L.lookup key $ t ^. keyVals
               ordering = if sortKeyVals cfg then sortWithNums else id
               subrows keyval = htmlRows kseq $ path <> [(key,keyval)]
-              -- grprow subs = if key `elem` rowGroup cfg && not (null subs)
-              --               then undefined
-              --               else subs
+              endOfGroup = key `elem` rowGroup cfg
               addSubrows ret keyval =
                 let sr = subrows keyval
-                in ret <> (fst $ foldl (leftAdd (length sr)) ([],Just keyval) $ sr)
-              leftAdd nrows (acc,mb'kv) (b,subrow) =
-                ( acc <> [ (b, case mb'kv of
-                                 Nothing -> subrow
-                                 Just kv -> Hdr (if rowRepeat cfg then 1 else nrows) kv : subrow) ]
-                , if rowRepeat cfg then mb'kv else Nothing)
+                in ret <> (fst $
+                           foldl (leftAdd (length sr)) ([],Just keyval) $
+                           reverse $ zip (endOfGroup: L.repeat False) $ reverse sr)
+              leftAdd nrows (acc,mb'kv) (endGrp, subrow) =
+                let sr = setValGrouping endGrp <$> subrow
+                    setValGrouping g (Val h g' v) = Val h (g || g') v
+                    setValGrouping g (Hdr h g' v) = Hdr h (g || g') v
+                in ( acc <> [ (case mb'kv of
+                                    Nothing -> sr
+                                    Just kv -> let w = if rowRepeat cfg
+                                                       then 1
+                                                       else nrows
+                                               in Hdr w endOfGroup kv : sr
+                              ) ]
+                   , if rowRepeat cfg then mb'kv else Nothing)
           in foldl addSubrows [] keyvals
 
 
-    -- multivalRows :: [Key] -> KeySpec -> [ Maybe v ]
     multivalRows [] _ = error "HTML multivalRows cannot be called with no keys!"
     multivalRows (key:[]) path =
       let keyvals = ordering $ fromMaybe [] $ L.lookup key $ t ^. keyVals
           ordering = if sortKeyVals cfg then sortWithNums else id
-      in (\v -> mkVal Val <$> lookup (path <> [(key,v)]) t) <$> keyvals
+      in (\v -> mkVal <$> lookup (path <> [(key,v)]) t) <$> keyvals
     multivalRows (key:kseq) path =
       let keyvals = ordering $ fromMaybe [] $ L.lookup key $ t ^. keyVals
           ordering = if sortKeyVals cfg then sortWithNums else id

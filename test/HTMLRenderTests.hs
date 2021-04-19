@@ -5,6 +5,7 @@
 module HTMLRenderTests where
 
 import           Control.Monad ( unless )
+import qualified Data.List as L
 import           Data.Text ( Text )
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
@@ -12,7 +13,8 @@ import           Lens.Micro ( (^.), (.~), (%~), (&) )
 import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Text.HTML.Parser ( parseTokens, renderToken
-                                  , canonicalizeTokens )
+                                  , canonicalizeTokens
+                                  , Token( TagOpen, TagSelfClose ) )
 
 import           SampleTables
 import           TestQQDefs
@@ -24,15 +26,19 @@ import qualified Data.KVITable.Render.HTML as KTRH
 
 cmpTables :: Text -> Text -> Text -> IO ()
 cmpTables nm actual expected = do
-  let expH = parseTokens $ T.concat $ fmap T.strip $ T.lines expected
-      actH = parseTokens actual
+  let expH = normalize $ parseTokens $ T.concat $ fmap T.strip $ T.lines expected
+      actH = normalize $ parseTokens actual
+      normalize = fmap sortAttrs . canonicalizeTokens
+      sortAttrs (TagOpen n a) = TagOpen n $ L.sort a
+      sortAttrs (TagSelfClose n a) = TagSelfClose n $ L.sort a
+      sortAttrs t = t
   unless (expH == actH) $ do
     let dl (e,a) = if e == a then db e else de " ↱" e <> "\n    " <> da " ↳" a
         db b = "|        > " <> b
         de m e = "|" <> m <> "expect> " <> e
         da m a = "|" <> m <> "actual> " <> a
-        el = fmap (TL.toStrict . renderToken) $ canonicalizeTokens expH
-        al = fmap (TL.toStrict . renderToken) $ canonicalizeTokens actH
+        el = fmap (TL.toStrict . renderToken) expH
+        al = fmap (TL.toStrict . renderToken) actH
         addnum n l = let nt = T.pack (show n)
                          nl = T.length nt
                      in T.take (4 - nl) "    " <> nt <> l
@@ -128,199 +134,7 @@ testHTMLRendering =
                          , KTR.equisizedCols = False
                          , KTR.colStackAt    = Just "hundreds"
                          }) nestedTable)
-        [sq|
-ASCII form:
-| millions | thousands | _____ 0 _____ | _______ 1 ________ | _______ 2 ________ | <- hundreds
-|          |           | _ 0 _ | _ 2 _ | _ 0 _ | ___ 2 ____ | _ 0 _ | ___ 2 ____ | <- tens
-|          |           | 0 | 1 | 0 | 1 | 0 | 1 |    0 |   1 | 0 | 1 |    0 |   1 | <- ones
-+----------+-----------+---+---+---+---+---+---+------+-----+---+---+------+-----+
-|        0 |         0 |   |   |   |   |   |   | even | odd |   |   | even | odd |
-|          |         1 |   |   |   |   |   |   | even | odd |   |   | even | odd |
-|          |         2 |   |   |   |   |   |   | even | odd |   |   | even | odd |
-|        1 |         0 |   |   |   |   |   |   | even | odd |   |   | even | odd |
-|          |         1 |   |   |   |   |   |   | even | odd |   |   | even | odd |
-|          |         2 |   |   |   |   |   |   | even | odd |   |   | even | odd |
-|        2 |         0 |   |   |   |   |   |   | even | odd |   |   | even | odd |
-|          |         1 |   |   |   |   |   |   | even | odd |   |   | even | odd |
-|          |         2 |   |   |   |   |   |   | even | odd |   |   | even | odd |
-****
-<table class="kvitable">
-  <thead class="kvitable_head">
-    <tr class="kvitable_tr">
-      <th rowspan="3" class="kvitable_th">millions</th>
-      <th rowspan="3" class="kvitable_th">thousands</th>
-      <th colspan="4" class="kvitable_th multicol">0</th>
-      <th colspan="4" class="kvitable_th multicol">1</th>
-      <th colspan="4" class="kvitable_th multicol">2</th>
-      <th class="rightlabel kvitable_th">&nbsp;&larr;hundreds</th>
-    </tr>
-    <tr class="kvitable_tr">
-      <th colspan="2" class="kvitable_th multicol">0</th>
-      <th colspan="2" class="kvitable_th multicol">2</th>
-      <th colspan="2" class="kvitable_th multicol">0</th>
-      <th colspan="2" class="kvitable_th multicol">2</th>
-      <th colspan="2" class="kvitable_th multicol">0</th>
-      <th colspan="2" class="kvitable_th multicol">2</th>
-      <th class="rightlabel kvitable_th">&nbsp;&larr;tens</th>
-    </tr>
-    <tr class="kvitable_tr">
-      <th class="kvitable_th">0</th>
-      <th class="kvitable_th">1</th>
-      <th class="kvitable_th">0</th>
-      <th class="kvitable_th">1</th>
-      <th class="kvitable_th">0</th>
-      <th class="kvitable_th">1</th>
-      <th class="kvitable_th">0</th>
-      <th class="kvitable_th">1</th>
-      <th class="kvitable_th">0</th>
-      <th class="kvitable_th">1</th>
-      <th class="kvitable_th">0</th>
-      <th class="kvitable_th">1</th>
-      <th class="rightlabel kvitable_th">&nbsp;&larr;ones</th>
-    </tr>
-  </thead>
-  <tbody class="kvitable_body">
-    <tr class="kvitable_tr">
-      <th rowspan="3" class="kvitable_th">0</th>
-      <th class="kvitable_th">0</th>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td">even</td>
-      <td class="kvitable_td">odd</td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td">even</td>
-      <td class="kvitable_td">odd</td>
-    </tr>
-    <tr class="kvitable_tr">
-      <th class="kvitable_th">1</th>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td">even</td>
-      <td class="kvitable_td">odd</td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td">even</td>
-      <td class="kvitable_td">odd</td>
-    </tr>
-    <tr class="kvitable_tr">
-      <th class="kvitable_th">2</th>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td">even</td>
-      <td class="kvitable_td">odd</td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td">even</td>
-      <td class="kvitable_td">odd</td>
-    </tr>
-    <tr class="kvitable_tr">
-      <th rowspan="3" class="kvitable_th">1</th>
-      <th class="kvitable_th">0</th>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td">even</td>
-      <td class="kvitable_td">odd</td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td">even</td>
-      <td class="kvitable_td">odd</td>
-    </tr>
-    <tr class="kvitable_tr">
-      <th class="kvitable_th">1</th>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td">even</td>
-      <td class="kvitable_td">odd</td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td">even</td>
-      <td class="kvitable_td">odd</td>
-    </tr>
-    <tr class="kvitable_tr">
-      <th class="kvitable_th">2</th>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td">even</td>
-      <td class="kvitable_td">odd</td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td">even</td>
-      <td class="kvitable_td">odd</td>
-    </tr>
-    <tr class="kvitable_tr">
-      <th rowspan="3" class="kvitable_th">2</th>
-      <th class="kvitable_th">0</th>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td">even</td>
-      <td class="kvitable_td">odd</td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td">even</td>
-      <td class="kvitable_td">odd</td>
-    </tr>
-    <tr class="kvitable_tr">
-      <th class="kvitable_th">1</th>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td">even</td>
-      <td class="kvitable_td">odd</td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td">even</td>
-      <td class="kvitable_td">odd</td>
-    </tr>
-    <tr class="kvitable_tr">
-      <th class="kvitable_th">2</th>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td">even</td>
-      <td class="kvitable_td">odd</td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td"></td>
-      <td class="kvitable_td">even</td>
-      <td class="kvitable_td">odd</td>
-    </tr>
-  </tbody>
-</table>
-****|]
+      [sq_f|examples/hundreds_all.md|]
 
     , testCase "nested table hideBlank=rol,col colstack=thousands" $
       cmpTables "nested table hideBlank=row,col colstack=thousands"
@@ -343,5 +157,32 @@ ASCII form:
 
                            }) nestedTable)
         [sq3_f|README.md|]
+
+    , testCase "big table grouped sorted" $
+      cmpTables "big table grouped sorted"
+      (KTRH.render (cfg0 { KTR.sortKeyVals = True
+                         , KTR.rowRepeat = False
+                         , KTR.rowGroup = [ "Location", "Biome", "Category" ]
+                         }) zooTable2)
+      [sq_f|examples/zoo.md|]
+
+    , testCase "big table grouped sorted no-subtype colstack" $
+      let zt = KVI.fromList $
+               foldl rmvSubtype [] $
+               KVI.toList zooTable2
+          rmvSubtype newl (keyspec, v) =
+            let ks = filter (("Subtype" /=) . fst) keyspec
+            in case lookup ks newl of
+                 Nothing -> (ks,v) : newl
+                 Just v' -> (ks, v' + v) : filter ((ks /=) . fst) newl
+      in cmpTables "big table grouped sorted no-subtype colstack"
+         (KTRH.render (cfg0 { KTR.sortKeyVals = True
+                            , KTR.rowRepeat   = False
+                            , KTR.rowGroup    = [ "Location", "Biome", "Category" ]
+                            , KTR.colStackAt  = Just "Name"
+                            , KTR.equisizedCols = False
+                            }) zt)
+         [sq2_f|examples/zoo.md|]
+
 
     ]
