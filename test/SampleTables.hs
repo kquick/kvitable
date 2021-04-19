@@ -193,7 +193,8 @@ nestedTable = foldl foldlInsert
                              , ("hundreds",  ["0"])
                              , ("tens",      ["0"])
                              , ("ones",      ["0"])
-                             ])
+                             ]
+              )
               [ ([("millions", T.pack $ show m)
                  ,("thousands", T.pack $ show t)
                  ,("hundreds", T.pack $ show h)

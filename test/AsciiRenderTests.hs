@@ -671,4 +671,41 @@ testAsciiRendering =
 |          |           |        2 |    2 | even | odd |
 @@@@|]
 
+    , testCase "nested table colstack=tens" $
+      cmpTables "hested table colstack=tens"
+        (KTRA.render (cfg0 { KTR.sortKeyVals = True
+                           , KTR.rowRepeat = False
+                           , KTR.hideBlankCols = True
+                           , KTR.hideBlankRows = True
+                           , KTR.equisizedCols = False
+                           , KTR.colStackAt = Just "tens"
+                           }) nestedTable)
+        -- Note: the nestedTable declares a KeyVal of 0 for each key;
+        -- without hideBlankCols true, this test would show a 0 value
+        -- column for the tens stacked column.
+        [sq|
+@@@@
+| millions | thousands | hundreds | ___ 2 ____ | <- tens
+|          |           |          |    0 |   1 | <- ones
++----------+-----------+----------+------+-----+
+|        0 |         0 |        1 | even | odd |
+|          |           |        2 | even | odd |
+|          |         1 |        1 | even | odd |
+|          |           |        2 | even | odd |
+|          |         2 |        1 | even | odd |
+|          |           |        2 | even | odd |
+|        1 |         0 |        1 | even | odd |
+|          |           |        2 | even | odd |
+|          |         1 |        1 | even | odd |
+|          |           |        2 | even | odd |
+|          |         2 |        1 | even | odd |
+|          |           |        2 | even | odd |
+|        2 |         0 |        1 | even | odd |
+|          |           |        2 | even | odd |
+|          |         1 |        1 | even | odd |
+|          |           |        2 | even | odd |
+|          |         2 |        1 | even | odd |
+|          |           |        2 | even | odd |
+@@@@|]
+
       ]

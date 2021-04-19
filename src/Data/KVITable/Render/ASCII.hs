@@ -47,8 +47,17 @@ perColOvhd = 2 -- pad chars on either side of each column's entry
 
 -- | Formatted width of output, including pad on either side of each
 -- column's value (but not the outer set), and a separator between columns.
+--
+-- Note that a column size of 0 indicates that hideBlankCols is active
+-- and the column was found to be empty of values, so it should not be
+-- counted.
 fmtWidth :: FmtLine -> Int
-fmtWidth (FmtLine cols _ _) = sum cols + ((perColOvhd + 1) * (length cols - 1))
+fmtWidth (FmtLine cols _ _) =
+  let cols' = L.filter (/= 0) cols
+  in sum cols' + ((perColOvhd + 1) * (length cols' - 1))
+
+fmtEmptyCols :: FmtLine -> Bool
+fmtEmptyCols (FmtLine cols _ _) = sum cols == 0
 
 fmtAddColLeft :: Int -> FmtLine -> FmtLine
 fmtAddColLeft leftCol (FmtLine cols s s') = FmtLine (leftCol : cols) s s'
@@ -80,7 +89,7 @@ fmtRender (FmtLine cols sigils sepsigils) vals =
             ) <>
             sig pad fld <>
             sig sep fld  -- KWQ or if next fld is Nothing
-          | (sz,fld) <- zip cols vals
+          | (sz,fld) <- zip cols vals, sz /= 0
           ]
   else error ("Insufficient arguments (" <>
               show (length vals) <> ")" <>
@@ -131,33 +140,47 @@ hdrvalstep _ _ _ [] = error "ASCII hdrvalstep with empty keys after matching col
 hdrvalstep cfg t steppath (key:[]) =
   let titles = ordering $ fromMaybe [] $ L.lookup key $ t ^. keyVals
       ordering = if sortKeyVals cfg then sortWithNums else id
-      colWidth kv = maximum ( T.length kv :
-                              ( fmap (length . show . PP.pretty . snd) $
-                                L.filter ((L.isSuffixOf (steppath <> [(key, kv)])) . fst) $
-                                toList t))
+      cvalWidths kv = fmap (length . show . PP.pretty . snd) $
+                      L.filter ((L.isSuffixOf (steppath <> [(key, kv)])) . fst) $
+                      toList t
+      colWidth kv = let cvw = cvalWidths kv
+                    in if and [ hideBlankCols cfg, sum cvw == 0 ]
+                    then 0
+                    else maximum $ T.length kv : cvw
       cwidths = fmap colWidth titles
       fmtcols = if equisizedCols cfg
                 then (replicate (length cwidths) (maximum cwidths))
                 else cwidths
-  in [ HdrLine (fmtLine fmtcols) (TxtVal <$> titles) key ]
+  in [ HdrLine (fmtLine $ fmtcols) (TxtVal <$> titles) key ]
 hdrvalstep cfg t steppath (key:keys) =
   let vals = ordering $ fromMaybe [] $ L.lookup key $ t ^. keyVals
       ordering = if sortKeyVals cfg then sortWithNums else id
       subhdrsV v = hdrvalstep cfg t (steppath <> [(key,v)]) keys
-      subTtlHdrs = fmap (\v -> (T.length v, subhdrsV v)) vals
-      szexts = fmap (uncurry max . fmap (fmtWidth . hdrFmt . head)) subTtlHdrs
+      subTtlHdrs = let subAtVal v = (T.length v, subhdrsV v)
+                   in fmap subAtVal vals
+      szexts = let subVW = fmtWidth . hdrFmt . head
+                   subW (hl,sh) = let sv = subVW sh
+                                  in if and [ hideBlankCols cfg,
+                                              fmtEmptyCols $ hdrFmt $ head sh
+                                            ]
+                                     then (0, 0)
+                                     else (hl, sv)
+               in fmap (uncurry max . subW) subTtlHdrs
       rsz_extsubhdrs = fmap hdrJoin $
                        L.transpose $
                        fmap (uncurry rsz_hdrstack) $
                        zip szhdrs $ fmap snd subTtlHdrs
       largest = maximum szexts
-      szhdrs = if equisizedCols cfg
+      szhdrs = if equisizedCols cfg && not (hideBlankCols cfg)
                then replicate (length vals) largest
                else szexts
       rsz_hdrstack s vhs = fmap (rsz_hdrs s) vhs
       rsz_hdrs hw (HdrLine (FmtLine c s j) v r) =
-        let pcw = sum c + ((perColOvhd + 1) * (length c - 1))
-            (ew,w0) = (hw - pcw) `divMod` length c
+        let nzCols = L.filter (/= 0) c
+            pcw = sum nzCols + ((perColOvhd + 1) * (length nzCols - 1))
+            (ew,w0) = let l = length nzCols
+                      in if l == 0 then (0,0)
+                         else max 0 (hw - pcw) `divMod` length nzCols
             c' = fst $ foldl (\(c'',n) w -> (c''<>[n+w],ew)) ([],ew+w0) c
         in HdrLine (FmtLine c' s j) v r
       hdrJoin hl = foldl hlJoin (HdrLine (fmtLine []) [] "") hl
