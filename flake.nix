@@ -9,8 +9,8 @@
   nixConfig.bash-prompt-suffix = "kvitable} ";
 
   inputs = {
-    nixpkgs.url = github:nixos/nixpkgs/nixpkgs-unstable;
-    # nixpkgs.url = github:nixos/nixpkgs/20.09;
+    # nixpkgs.url = github:nixos/nixpkgs/nixpkgs-unstable;
+    nixpkgs.url = github:nixos/nixpkgs/22.05;
     levers = {
       type = "github";
       owner = "kquick";
@@ -18,12 +18,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     html-parse-src = { flake = false; url = github:bgamari/html-parse; };
-    prettyprinter-src = { flake = false; url = github:quchen/prettyprinter?dir=prettyprinter; };
   };
 
   outputs = { self, nixpkgs, levers
             , html-parse-src
-            , prettyprinter-src
             }: rec
       {
         defaultPackage = levers.eachSystem (s:
@@ -39,7 +37,7 @@
           in rec {
 
             kvitable = mkHaskell "kvitable" self {
-              inherit html-parse prettyprinter;
+              inherit html-parse;
             };
 
             html-parse = mkHaskell "html-parse" html-parse-src {
@@ -48,35 +46,6 @@
                 if builtins.compareVersions pkgs.haskell.compiler."${ghcv}".version "9.0" < 0
                 then drv
                 else pkgs.haskell.lib.doJailbreak drv;
-            };
-
-            prettyprinter = mkHaskell "prettyprinter"
-              "${prettyprinter-src}/prettyprinter" {
-                adjustDrv = args: drv:
-                  pkgs.haskell.lib.overrideCabal
-                    (pkgs.haskell.lib.dontCheck
-                      (pkgs.haskell.lib.appendConfigureFlags drv
-                        [ "--extra-include-dirs=${prettyprinter-macros}" ]))
-                    (old: {
-                      # The LICENSE.md in prettyprinter is a symlink
-                      # to the directory above it, but the src
-                      # specification will lose it, so create an
-                      # explicit copy instead.
-                      preConfigure = ''
-                              rm /build/prettyprinter/LICENSE.md
-                              cp ${prettyprinter-src}/LICENSE.md /build/prettyprinter/LICENSE.md
-                            '';
-                          });
-                };
-            prettyprinter-macros = pkgs.stdenv.mkDerivation {
-              pname = "prettyprinter-macros";
-              version = "1.7.0";
-              phases = [ "installPhase" ];
-              src = "${prettyprinter-src}/aux";
-              installPhase = ''
-                mkdir $out
-                cp ${prettyprinter-src}/aux/version-compatibility-macros.h $out/
-              '';
             };
           });
       };
