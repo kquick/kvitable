@@ -47,12 +47,12 @@ library
                      , Data.KVITable.Render.ASCII
                      , Data.KVITable.Render.HTML
   -- other-modules:
-  build-depends:       base >=4.12 && <4.17
-                     , containers >= 0.6 && < 0.7
+  build-depends:       base >=4.12 && <4.18
+                     , containers
                      , lucid  >= 2.9 && < 2.12
                      , microlens >= 0.4 && < 0.5
                      , prettyprinter >= 1.7 && < 1.8
-                     , text >= 1.2 && < 1.3
+                     , text
 
 test-suite test-kvitable
   type:                exitcode-stdio-1.0
