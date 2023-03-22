@@ -31,7 +31,13 @@ copyright:           Kevin Quick, 2021-2022
 category:            Text
 homepage:            https://github.com/kquick/kvitable
 build-type:          Simple
-tested-with:         GHC ==8.6.5 GHC ==8.8.4 GHC ==8.10.4 GHC ==9.0.1
+tested-with:         GHC ==8.6.5
+                     GHC ==8.8.4
+                     GHC ==8.10.7
+                     GHC ==9.0.1
+                     GHC ==9.2.7
+                     GHC ==9.4.4
+                     GHC ==8.6.1
 extra-source-files:  CHANGELOG.md
                    , examples/hundreds_all.md
                    , examples/zoo.md
@@ -47,7 +53,7 @@ library
                      , Data.KVITable.Render.ASCII
                      , Data.KVITable.Render.HTML
   -- other-modules:
-  build-depends:       base >=4.12 && <4.18
+  build-depends:       base >=4.12 && <4.19
                      , containers
                      , lucid  >= 2.9 && < 2.12
                      , microlens >= 0.4 && < 0.5
