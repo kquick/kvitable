@@ -10,7 +10,7 @@
 
   inputs = {
     # nixpkgs.url = github:nixos/nixpkgs/nixpkgs-unstable;
-    nixpkgs.url = github:nixos/nixpkgs/22.05;
+    nixpkgs.url = github:nixos/nixpkgs/23.05;
     levers = {
       type = "github";
       owner = "kquick";
@@ -24,28 +24,42 @@
             , html-parse-src
             }: rec
       {
-        defaultPackage = levers.eachSystem (s:
-          self.packages.${s}.kvitable.default);
-
-        devShell = levers.eachSystem (s: defaultPackage.${s}.env);
+        devShell = levers.eachSystem (s: packages.${s}.default.env);
 
         packages = levers.eachSystem (system:
           let mkHaskell = levers.mkHaskellPkg {
                 inherit nixpkgs system;
               };
               pkgs = import nixpkgs { inherit system; };
+              wrap = levers.pkg_wrapper system pkgs;
+              haskellAdj = drv:
+                with (pkgs.haskell).lib;
+                dontHaddock (dontCheck (dontBenchmark (drv)));
           in rec {
+            default = kvitable;
+            TESTS = wrap "kvitable-TESTS" [ kvitable-test ];
+            DOC = wrap "kvitable-DOC" [ kvitable-doc ];
 
             kvitable = mkHaskell "kvitable" self {
               inherit html-parse;
+              adjustDrv = args: haskellAdj;
+            };
+            kvitable-test = mkHaskell "kvitable-test" self {
+              inherit html-parse;
+              adjustDrv = args: drv: pkgs.haskell.lib.doCheck (haskellAdj drv);
+            };
+            kvitable-doc = mkHaskell "kvitable-doc" self {
+              inherit html-parse;
+              adjustDrv = args: drv:
+                with pkgs.haskell.lib; dontCheck (dontBenchmark drv);
             };
 
             html-parse = mkHaskell "html-parse" html-parse-src {
               adjustDrv = args: drv:
                 let ghcv = args.ghcver or "ghc8104"; in
                 if builtins.compareVersions pkgs.haskell.compiler."${ghcv}".version "9.0" < 0
-                then drv
-                else pkgs.haskell.lib.doJailbreak drv;
+                then haskellAdj drv
+                else pkgs.haskell.lib.doJailbreak (haskellAdj drv);
             };
           });
       };
