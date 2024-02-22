@@ -9,8 +9,7 @@
   nixConfig.bash-prompt-suffix = "kvitable} ";
 
   inputs = {
-    # nixpkgs.url = github:nixos/nixpkgs/nixpkgs-unstable;
-    nixpkgs.url = github:nixos/nixpkgs/23.05;
+    nixpkgs.url = github:nixos/nixpkgs/nixpkgs-unstable;
     levers = {
       type = "github";
       owner = "kquick";

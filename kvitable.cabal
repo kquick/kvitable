@@ -53,7 +53,7 @@ library
                      , Data.KVITable.Render.ASCII
                      , Data.KVITable.Render.HTML
   -- other-modules:
-  build-depends:       base >=4.12 && <4.19
+  build-depends:       base >=4.12 && <4.20
                      , containers
                      , lucid  >= 2.9 && < 2.12
                      , microlens >= 0.4 && < 0.5
