@@ -15,7 +15,13 @@ jobs:
     steps:
       - uses: cachix/install-nix-action@v20
         with:
-          nix_path: nixpkgs=channel:nixos-23.11
+          # n.b. this is a flake build, so the cachix-installed nix channel is
+          # unused except to get nix itself.  As of v20 (at least), cachix is
+          # installing flake-compatible nix versions, so this has been removed to
+          # eliminate unneeded duplication, but left here as an exemplar should
+          # this be needed in the future.
+          #
+          # nix_path: nixpkgs=channel:nixos-23.05
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: cachix/cachix-action@v12
         with:
@@ -29,7 +35,6 @@ jobs:
     steps:
       - uses: cachix/install-nix-action@v20
         with:
-          nix_path: nixpkgs=channel:nixos-23.11
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: cachix/cachix-action@v12
         with:
@@ -43,7 +48,6 @@ jobs:
     steps:
       - uses: cachix/install-nix-action@v20
         with:
-          nix_path: nixpkgs=channel:nixos-23.11
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: cachix/cachix-action@v12
         with:
