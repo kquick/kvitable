@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
@@ -74,14 +75,14 @@ fmtAddColLeft leftCol (FmtLine cols s s') = FmtLine (leftCol : cols) s s'
 data FmtVal = Separator | TxtVal Text | CenterVal Text
 
 fmtRender :: FmtLine -> [FmtVal] -> Text
-fmtRender (FmtLine [] _sigils _sepsigils) [] = ""
-fmtRender (FmtLine cols sigils sepsigils) vals =
+fmtRender (FmtLine _cols _sigils _sepsigils) [] = ""
+fmtRender (FmtLine cols sigils sepsigils) vals@(val:_) =
   if length cols == length vals
   then let sig f o = case o of
                        Separator   -> f sepsigils
                        TxtVal _    -> f sigils
                        CenterVal _ -> f sigils
-           l = sig sep $ head vals
+           l = sig sep val
        in l <>
           T.concat
           [ sig pad fld <>
@@ -123,7 +124,9 @@ renderHdrs cfg t keys =
     [ fmtRender lastFmt (replicate (fmtColCnt lastFmt) Separator) ])
   where
     hrows = hdrstep cfg t keys
-    lastFmt = if null hrows then fmtLine [] else hdrFmt $ head $ reverse hrows
+    lastFmt = case reverse hrows of
+                [] -> fmtLine []
+                (hrow:_) -> hdrFmt hrow
 
 hdrstep :: PP.Pretty v => RenderConfig -> KVITable v -> [Key] -> [HeaderLine]
 hdrstep _cfg t [] =
@@ -167,13 +170,16 @@ hdrvalstep cfg t steppath (key:keys) =
       subhdrsV v = hdrvalstep cfg t (steppath <> [(key,v)]) keys
       subTtlHdrs = let subAtVal v = (T.length v, subhdrsV v)
                    in fmap subAtVal vals
-      szexts = let subVW = fmtWidth . hdrFmt . head
-                   subW (hl,sh) = let sv = subVW sh
-                                  in if and [ hideBlankCols cfg,
-                                              fmtEmptyCols $ hdrFmt $ head sh
-                                            ]
-                                     then (0, 0)
-                                     else (hl, sv)
+      szexts = let subW (hl,sh) =
+                     case sh of
+                       [] -> (0, 0)  -- should never be the case
+                       (sh0:_) ->
+                         let sv = fmtWidth $ hdrFmt sh0
+                         in if and [ hideBlankCols cfg,
+                                     fmtEmptyCols $ hdrFmt sh0
+                                   ]
+                            then (0, 0)
+                            else (hl, sv)
                in fmap (uncurry max . subW) subTtlHdrs
       rsz_extsubhdrs = fmap hdrJoin $
                        L.transpose $
@@ -220,12 +226,13 @@ renderSeq cfg fmt keys kvitbl = fmtRender fmt . snd <$> asciiRows keys []
         in filterOrDefaultBlankRows $ [ (False, multivalRows (key:kseq) path) ]
       | otherwise =
         let subrows keyval = asciiRows kseq $ path <> [ (key, keyval) ]
-            grprow subs = if key `elem` rowGroup cfg && not (null subs)
-                          then let subl = [ (True, replicate (length $ snd $ head subs) Separator) ]
-                               in if fst (last subs)
-                                  then init subs <> subl
-                                  else subs <> subl
-                          else subs
+            grprow = \case
+              subs@(sub0:_) | key `elem` rowGroup cfg ->
+                  let subl = [ (True, replicate (length $ snd sub0) Separator) ]
+                  in if fst (last subs)
+                     then init subs <> subl
+                     else subs <> subl
+              subs -> subs
             addSubrows ret keyval = ret <> (grprow $ fst $
                                             foldl leftAdd ([],keyval) $ subrows keyval)
             leftAdd (acc,kv) (b,subrow) = (acc <> [ (b, TxtVal kv : subrow) ],
