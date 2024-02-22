@@ -9,6 +9,7 @@
   nixConfig.bash-prompt-suffix = "kvitable} ";
 
   inputs = {
+    nixpkgs8.url = github:nixos/nixpkgs/23.05;
     nixpkgs.url = github:nixos/nixpkgs/nixpkgs-unstable;
     levers = {
       type = "github";
@@ -19,16 +20,24 @@
     html-parse-src = { flake = false; url = github:bgamari/html-parse; };
   };
 
-  outputs = { self, nixpkgs, levers
+  outputs = { self, nixpkgs, nixpkgs8, levers
             , html-parse-src
             }: rec
       {
         devShell = levers.eachSystem (s: packages.${s}.default.env);
 
         packages = levers.eachSystem (system:
-          let mkHaskell = levers.mkHaskellPkg {
+          let mkHaskell9 = levers.mkHaskellPkg {
                 inherit nixpkgs system;
               };
+              mkHaskell8 = levers.mkHaskellPkg {
+                inherit system;
+                nixpkgs = nixpkgs8;
+              };
+              mkHaskell = name: src: ovrDrvOrArgs:
+                let blds8 = mkHaskell8 name src ovrDrvOrArgs;
+                    blds9 = mkHaskell9 name src ovrDrvOrArgs;
+                in (blds8 // blds9);
               pkgs = import nixpkgs { inherit system; };
               wrap = levers.pkg_wrapper system pkgs;
               haskellAdj = drv:
