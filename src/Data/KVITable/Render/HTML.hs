@@ -18,6 +18,8 @@ where
 
 import qualified Data.Foldable as F
 import qualified Data.List as L
+import           Data.List.NonEmpty ( NonEmpty( (:|) ) )
+import qualified Data.List.NonEmpty as NEL
 import           Data.Maybe ( fromMaybe, isNothing )
 import           Data.Text ( Text )
 import qualified Data.Text as T
@@ -117,34 +119,34 @@ hdrFmt (HdrLine fmt _ _) = fmt
 renderHdrs :: PP.Pretty v
            => RenderConfig -> KVITable v -> [Key]
            -> ( FmtLine, Html () )
-renderHdrs cfg t keys =
-  ( rowfmt, sequence_ [ fmtRender fmt hdrvals trailer
-                      | (HdrLine fmt hdrvals trailer) <- hrows
-                      ])
+renderHdrs cfg t keys = ( rowfmt, sequence_ hdrs )
   where
+    hdrs = fmap renderHdr hrows
     (hrows, rowfmt) = hdrstep cfg t keys
+    renderHdr (HdrLine fmt hdrvals trailer) = fmtRender fmt hdrvals trailer
 
 hdrstep :: PP.Pretty v
-        => RenderConfig -> KVITable v -> [Key] -> ([HeaderLine], FmtLine)
+        => RenderConfig -> KVITable v -> [Key]
+        -> (NEL.NonEmpty HeaderLine, FmtLine)
 hdrstep _cfg t [] =
-  ( [ HdrLine (FmtLine [1]) [Hdr 1 False $ t ^. valueColName] Nothing ]
+  ( HdrLine (FmtLine [1]) [Hdr 1 False $ t ^. valueColName] Nothing :| []
   , FmtLine [1]
   )
 hdrstep cfg t (key:keys) =
   if colStackAt cfg == Just key
   then hdrvalstep cfg t [] (key:keys) -- switch to column stacking mode
   else
-    let (nexthdrs, lowestfmt) = hdrstep cfg t keys
-        (HdrLine fmt vals tr) = head nexthdrs -- safe: there were keys
+    let (nexthdr0 :| nexthdrs, lowestfmt) = hdrstep cfg t keys
+        (HdrLine fmt vals tr) = nexthdr0
         fmt' = fmtAddColLeft 1 fmt
-        val = Hdr (length nexthdrs) False key
-    in ( (HdrLine fmt' (val : vals) tr) : tail nexthdrs
+        val = Hdr (length nexthdrs + 1) False key
+    in ( (HdrLine fmt' (val : vals) tr) :| nexthdrs
        , fmtAddColLeft 1 lowestfmt
        )
 
 hdrvalstep :: PP.Pretty v
            => RenderConfig -> KVITable v -> KeySpec -> [Key]
-           -> ([HeaderLine], FmtLine)
+           -> (NEL.NonEmpty HeaderLine, FmtLine)
 hdrvalstep _ _ _ [] = error "HTML hdrvalstep with empty keys after matching colStackAt -- impossible"
 hdrvalstep cfg t steppath (key:[]) =
   let titles = ordering $ fromMaybe [] $ L.lookup key $ t ^. keyVals
@@ -157,25 +159,40 @@ hdrvalstep cfg t steppath (key:[]) =
                  then 0
                  else 1
       fmt = FmtLine $ fmap cwidth titles
-  in ( [ HdrLine fmt (Hdr 1 False <$> titles) (Just key) ], fmt)
+  in ( HdrLine fmt (Hdr 1 False <$> titles) (Just key) :| [], fmt)
 hdrvalstep cfg t steppath (key:keys) =
-  let titles = ordering $ fromMaybe [] $ L.lookup key $ t ^. keyVals
-      ordering = if sortKeyVals cfg then sortWithNums else id
-      subhdrsV v = hdrvalstep cfg t (steppath <> [(key,v)]) keys
-      subTtlHdrs :: [ ([HeaderLine], FmtLine) ]
-      subTtlHdrs = subhdrsV <$> titles
-      subhdrs = if hideBlankCols cfg
-                then subTtlHdrs
-                else L.replicate (length titles) $ head subTtlHdrs
-      subhdr_rollup = joinHdrs <$> L.transpose (fst <$> subhdrs)
-      joinHdrs hl = foldl (<>) (head hl) (tail hl)
-      superFmt sub = let FmtLine subcols = hdrFmt $ last $ fst sub
-                     in if sum subcols == 0
-                        then 0
-                        else length $ L.filter (/= 0) subcols
-      topfmt = FmtLine (superFmt <$> subhdrs)
-      tophdr = HdrLine topfmt (Hdr 1 False <$> titles) $ Just key
-  in ( tophdr : subhdr_rollup, F.fold (snd <$> subTtlHdrs))
+  let ordering = if sortKeyVals cfg then sortWithNums else id
+  in case ordering $ fromMaybe [] $ L.lookup key $ t ^. keyVals of
+       [] -> error "cannot happen"
+       (ttl:ttls) ->
+         let
+           titles = ttl :| ttls
+           subhdrsV v = hdrvalstep cfg t (steppath <> [(key,v)]) keys
+           subTtlHdrs :: NEL.NonEmpty (NEL.NonEmpty HeaderLine, FmtLine)
+           subTtlHdrs = subhdrsV <$> titles
+           subhdrs :: NEL.NonEmpty (NEL.NonEmpty HeaderLine, FmtLine)
+           subhdrs = if hideBlankCols cfg
+                     then subTtlHdrs
+                     else
+                       -- Want to repeat the first element of subTtlHdrs to get a
+                       -- NonEmpty the same length as titles.  Both titles and
+                       -- subTtlHdrs are NonEmpty, but NonEmpty has no replicate
+                       -- function.
+                       let n = length titles -- >= 1 because titles is NonEmpty
+                           e = NEL.head subTtlHdrs
+                           tail' = NEL.take (n-1) $ NEL.repeat e
+                       in e :| tail'
+           subhdr_rollup = joinHdrs <$> NEL.transpose (fst <$> subhdrs)
+           joinHdrs :: NEL.NonEmpty HeaderLine -> HeaderLine
+           joinHdrs (hl0 :| hls) = foldl (<>) hl0 hls
+           superFmt :: (NEL.NonEmpty HeaderLine, FmtLine) -> Int
+           superFmt sub = let FmtLine subcols = hdrFmt $ NEL.last $ fst sub
+                          in if sum subcols == 0
+                             then 0
+                             else length $ L.filter (/= 0) subcols
+           topfmt = FmtLine $ NEL.toList (superFmt <$> subhdrs)
+           tophdr = HdrLine topfmt (NEL.toList (Hdr 1 False <$> titles)) $ Just key
+         in ( NEL.cons tophdr subhdr_rollup, F.fold (snd <$> subTtlHdrs))
 
 ----------------------------------------------------------------------
 
