@@ -24,7 +24,16 @@
             , html-parse-src
             }: rec
       {
-        devShell = levers.eachSystem (s: packages.${s}.default.env);
+        devShells = levers.eachSystem (s:
+          let kpkg = packages.${s}.default.env.overrideAttrs (old:
+                {
+                  nativeBuildInputs = let pkgs = import nixpkgs { system=s; }; in [
+                pkgs.haskell.compiler.ghc98
+                pkgs.cabal-install
+                  ] ++ old.nativeBuildInputs;
+                }
+              );
+          in { kvitable = kpkg; default = kpkg; });
 
         packages = levers.eachSystem (system:
           let mkHaskell9 = levers.mkHaskellPkg {
