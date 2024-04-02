@@ -165,6 +165,18 @@ main = defaultMain $
                           , ([ "baz", "beam", "woof"], "yo")
                           ]
 
+         , testCaseSteps "insertWith" $ \step ->
+             do
+               let keyvals = [ ("foo", "bar"), ("moo", "cow") ]
+
+               step "inserting a new value"
+               let t1 = insertWith (<>) keyvals "old" kvi0
+               Just "old" @=? lookup keyvals t1
+
+               step "combining with an existing value"
+               let t2 = insertWith (<>) keyvals "new" t1
+               Just "newold" @=? lookup keyvals t2
+
          , testCase "medium sized table rows" $
            rows mediumKVI @?=
            [ ([ "gcc7", "yes", "0"], "good" )

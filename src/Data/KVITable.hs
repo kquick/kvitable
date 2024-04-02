@@ -21,7 +21,9 @@ module Data.KVITable
   , keyValGen
   , valueColName
   , insert
+  , insertWith
   , foldlInsert
+  , foldlInsertWith
   , Data.KVITable.filter
   , adjust
   , adjustWithKey
@@ -210,9 +212,24 @@ normalizeKeySpec t keyspec =
 -- for the table.  In general, insertion is expected to be less
 -- frequent than lookups so computation costs are biased towards the
 -- insertion operation.
+--
+-- This is equivalent to @insertWith const@.
 
 insert :: KeySpec -> v -> KVITable v -> KVITable v
-insert keyspec val t = endset t val (keyvals t) keyspec [] []
+insert = insertWith const
+
+-- | Inserts a new cell value into the table at the specified keyspec
+-- location, if no value exists at that location. Otherwise, the old and
+-- new value are combined via @f new old@.  The keyspec may be minimally
+-- specified and out-of-order.
+--
+-- This may be an expensive operation if it has to extend the keyvals
+-- for the table.  In general, insertion is expected to be less
+-- frequent than lookups so computation costs are biased towards the
+-- insertion operation.
+
+insertWith :: (v -> v -> v) -> KeySpec -> v -> KVITable v -> KVITable v
+insertWith f keyspec val t = endsetWith f t val (keyvals t) keyspec [] []
 
 remainingKeyValDefaults :: KVITable v -> [(Key,a)] -> KeySpec
 remainingKeyValDefaults t = fmap (\(k,_) -> (k, keyvalGen t k))
@@ -222,18 +239,18 @@ addDefVal t e@(k,vs) = if (keyvalGen t k) `elem` vs
                        then e
                        else (k, keyvalGen t k : vs)
 
-endset :: KVITable v -> v -> KeyVals -> KeySpec -> KeySpec -> KeyVals -> KVITable v
-endset t val rkv [] tspec kvbld =
+endsetWith :: (v -> v -> v) -> KVITable v -> v -> KeyVals -> KeySpec -> KeySpec -> KeyVals -> KVITable v
+endsetWith f t val rkv [] tspec kvbld =
         -- Reached the end of the user's keyspec but there are more
         -- known keyvals in this KVITable, so add the entry with the
         -- default KeyVal for the remaining keyspec (and ensure the
         -- default KeyVal is listed in the table's keyvals).
         let spec = tspec <> remainingKeyValDefaults t rkv
-        in t { contents = Map.insert spec val (contents t)
+        in t { contents = Map.insertWith f spec val (contents t)
              , keyvals = kvbld <> (addDefVal t <$> rkv)
              }
 
-endset t val [] spec tspec kvbld =
+endsetWith f t val [] spec tspec kvbld =
   -- Reached the end of the known keyvals for this table but the
   -- user's keyspec has additional elements.  This should extend
   -- the tables keyvals with the remaining keyspec; also all
@@ -247,38 +264,48 @@ endset t val [] spec tspec kvbld =
       curTblList = Map.toList $ contents t
       defaultsExtension = remainingKeyValDefaults t spec
       updTblList = fmap (\(ks,v) -> (ks <> defaultsExtension, v)) curTblList
-  in t { contents = Map.insert spec' val $ Map.fromList updTblList
+  in t { contents = Map.insertWith f spec' val $ Map.fromList updTblList
        , keyvals = keyvals'
        }
 
-endset t val kvs@((k,vs):rkvs) ((sk,sv):srs) tspec kvbld =
+endsetWith f t val kvs@((k,vs):rkvs) ((sk,sv):srs) tspec kvbld =
   if k == sk
   then let kv' = if sv `elem` vs
                  then kvbld <> [(k, vs)]
                  else kvbld <> [(k, sv : vs)]
-       in endset t val rkvs srs (tspec <> [(k,sv)]) kv'
+       in endsetWith f t val rkvs srs (tspec <> [(k,sv)]) kv'
   else
     -- re-arrange user spec crudely by throwing invalid
     -- candidates to the end and retrying.  This isn't
     -- necessarily efficient, but keyspecs aren't expected to be
     -- longer than about a dozen entries.
     if sk `elem` (fst <$> rkvs) && k `elem` (fst <$> srs)
-    then endset t val kvs (srs <> [(sk,sv)]) tspec kvbld
+    then endsetWith f t val kvs (srs <> [(sk,sv)]) tspec kvbld
     else
       if any (`elem` (fst <$> kvs)) (fst <$> srs)
-      then endset t val kvs (srs <> [(sk,sv)]) tspec kvbld
+      then endsetWith f t val kvs (srs <> [(sk,sv)]) tspec kvbld
       else
         let defVal = keyvalGen t k
             vs' = if defVal `elem` vs then vs else (defVal : vs)
-        in endset t val rkvs ((sk,sv):srs) (tspec <> [(k,defVal)]) (kvbld <> [(k,vs')])
+        in endsetWith f t val rkvs ((sk,sv):srs) (tspec <> [(k,defVal)]) (kvbld <> [(k,vs')])
 
 
--- | The foldlInsert is a convenience function that can be specified
+-- | foldlInsert is a convenience function that can be specified
 -- as the function argument of a foldl operation over the list form of
 -- a KVITable to generate the associated KVITable.
+--
+-- This is equivalent to @foldlInsertWith const@.
 
 foldlInsert :: KVITable v -> (KeySpec, v) -> KVITable v
-foldlInsert t (k,v) = insert k v t
+foldlInsert = foldlInsertWith const
+
+-- | foldlInsertWith is a convenience function that, when curried with a
+-- "combining" function, can be specified as the function argument of a foldl
+-- operation over the list form of a KVITable to generate the associated
+-- KVITable.
+
+foldlInsertWith :: (v -> v -> v) -> KVITable v -> (KeySpec, v) -> KVITable v
+foldlInsertWith f t (k,v) = insertWith f k v t
 
 
 -- | Filter 'KVITable' to retain only the elements that satisfy some predicate.
