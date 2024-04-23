@@ -83,87 +83,87 @@ things prettier), the following is obtained:
 <table class="kvitable">
   <thead class="kvitable_head">
     <tr class="kvitable_tr">
-      <th rowspan="3" class="kvitable_th">millions</th>
-      <th rowspan="3" class="kvitable_th">thousands</th>
-      <th colspan="2" class="kvitable_th multicol">1</th>
-      <th colspan="2" class="kvitable_th multicol">2</th>
+      <th rowspan="3" class="kvitable_th"><div><span>millions</span></div></th>
+      <th rowspan="3" class="kvitable_th"><div><span>thousands</span></div></th>
+      <th colspan="2" class="kvitable_th multicol"><div><span>1</span></div></th>
+      <th colspan="2" class="kvitable_th multicol"><div><span>2</span></div></th>
       <th class="rightlabel kvitable_th">&nbsp;&larr;hundreds</th>
     </tr>
     <tr class="kvitable_tr">
-      <th colspan="2" class="kvitable_th multicol">2</th>
-      <th colspan="2" class="kvitable_th multicol">2</th>
+      <th colspan="2" class="kvitable_th multicol"><div><span>2</span></div></th>
+      <th colspan="2" class="kvitable_th multicol"><div><span>2</span></div></th>
       <th class="rightlabel kvitable_th">&nbsp;&larr;tens</th>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">0</th>
-      <th class="kvitable_th">1</th>
-      <th class="kvitable_th">0</th>
-      <th class="kvitable_th">1</th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
       <th class="rightlabel kvitable_th">&nbsp;&larr;ones</th>
     </tr>
   </thead>
   <tbody class="kvitable_body">
     <tr class="kvitable_tr">
-      <th rowspan="3" class="kvitable_th">0</th>
-      <th class="kvitable_th">0</th>
+      <th rowspan="3" class="kvitable_th"><div><span>0</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
       <td class="kvitable_td">even</td>
       <td class="kvitable_td">odd</td>
       <td class="kvitable_td">even</td>
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">1</th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
       <td class="kvitable_td">even</td>
       <td class="kvitable_td">odd</td>
       <td class="kvitable_td">even</td>
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">2</th>
+      <th class="kvitable_th"><div><span>2</span></div></th>
       <td class="kvitable_td">even</td>
       <td class="kvitable_td">odd</td>
       <td class="kvitable_td">even</td>
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th rowspan="3" class="kvitable_th">1</th>
-      <th class="kvitable_th">0</th>
+      <th rowspan="3" class="kvitable_th"><div><span>1</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
       <td class="kvitable_td">even</td>
       <td class="kvitable_td">odd</td>
       <td class="kvitable_td">even</td>
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">1</th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
       <td class="kvitable_td">even</td>
       <td class="kvitable_td">odd</td>
       <td class="kvitable_td">even</td>
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">2</th>
+      <th class="kvitable_th"><div><span>2</span></div></th>
       <td class="kvitable_td">even</td>
       <td class="kvitable_td">odd</td>
       <td class="kvitable_td">even</td>
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th rowspan="3" class="kvitable_th">2</th>
-      <th class="kvitable_th">0</th>
+      <th rowspan="3" class="kvitable_th"><div><span>2</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
       <td class="kvitable_td">even</td>
       <td class="kvitable_td">odd</td>
       <td class="kvitable_td">even</td>
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">1</th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
       <td class="kvitable_td">even</td>
       <td class="kvitable_td">odd</td>
       <td class="kvitable_td">even</td>
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">2</th>
+      <th class="kvitable_th"><div><span>2</span></div></th>
       <td class="kvitable_td">even</td>
       <td class="kvitable_td">odd</td>
       <td class="kvitable_td">even</td>
@@ -200,49 +200,49 @@ or as HTML:
 <table class="kvitable">
   <thead class="kvitable_head">
     <tr class="kvitable_tr">
-      <th rowspan="4" class="kvitable_th">millions</th>
-      <th colspan="4" class="kvitable_th multicol">0</th>
-      <th colspan="4" class="kvitable_th multicol">1</th>
-      <th colspan="4" class="kvitable_th multicol">2</th>
+      <th rowspan="4" class="kvitable_th"><div><span>millions</span></div></th>
+      <th colspan="4" class="kvitable_th multicol"><div><span>0</span></div></th>
+      <th colspan="4" class="kvitable_th multicol"><div><span>1</span></div></th>
+      <th colspan="4" class="kvitable_th multicol"><div><span>2</span></div></th>
       <th class="rightlabel kvitable_th">&nbsp;&larr;thousands</th>
     </tr>
     <tr class="kvitable_tr">
-      <th colspan="2" class="kvitable_th multicol">1</th>
-      <th colspan="2" class="kvitable_th multicol">2</th>
-      <th colspan="2" class="kvitable_th multicol">1</th>
-      <th colspan="2" class="kvitable_th multicol">2</th>
-      <th colspan="2" class="kvitable_th multicol">1</th>
-      <th colspan="2" class="kvitable_th multicol">2</th>
+      <th colspan="2" class="kvitable_th multicol"><div><span>1</span></div></th>
+      <th colspan="2" class="kvitable_th multicol"><div><span>2</span></div></th>
+      <th colspan="2" class="kvitable_th multicol"><div><span>1</span></div></th>
+      <th colspan="2" class="kvitable_th multicol"><div><span>2</span></div></th>
+      <th colspan="2" class="kvitable_th multicol"><div><span>1</span></div></th>
+      <th colspan="2" class="kvitable_th multicol"><div><span>2</span></div></th>
       <th class="rightlabel kvitable_th">&nbsp;&larr;hundreds</th>
     </tr>
     <tr class="kvitable_tr">
-      <th colspan="2" class="kvitable_th multicol">2</th>
-      <th colspan="2" class="kvitable_th multicol">2</th>
-      <th colspan="2" class="kvitable_th multicol">2</th>
-      <th colspan="2" class="kvitable_th multicol">2</th>
-      <th colspan="2" class="kvitable_th multicol">2</th>
-      <th colspan="2" class="kvitable_th multicol">2</th>
+      <th colspan="2" class="kvitable_th multicol"><div><span>2</span></div></th>
+      <th colspan="2" class="kvitable_th multicol"><div><span>2</span></div></th>
+      <th colspan="2" class="kvitable_th multicol"><div><span>2</span></div></th>
+      <th colspan="2" class="kvitable_th multicol"><div><span>2</span></div></th>
+      <th colspan="2" class="kvitable_th multicol"><div><span>2</span></div></th>
+      <th colspan="2" class="kvitable_th multicol"><div><span>2</span></div></th>
       <th class="rightlabel kvitable_th">&nbsp;&larr;tens</th>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">0</th>
-      <th class="kvitable_th">1</th>
-      <th class="kvitable_th">0</th>
-      <th class="kvitable_th">1</th>
-      <th class="kvitable_th">0</th>
-      <th class="kvitable_th">1</th>
-      <th class="kvitable_th">0</th>
-      <th class="kvitable_th">1</th>
-      <th class="kvitable_th">0</th>
-      <th class="kvitable_th">1</th>
-      <th class="kvitable_th">0</th>
-      <th class="kvitable_th">1</th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
       <th class="rightlabel kvitable_th">&nbsp;&larr;ones</th>
     </tr>
   </thead>
   <tbody class="kvitable_body">
     <tr class="kvitable_tr">
-      <th class="kvitable_th">0</th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
       <td class="kvitable_td">even</td>
       <td class="kvitable_td">odd</td>
       <td class="kvitable_td">even</td>
@@ -257,7 +257,7 @@ or as HTML:
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">1</th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
       <td class="kvitable_td">even</td>
       <td class="kvitable_td">odd</td>
       <td class="kvitable_td">even</td>
@@ -272,7 +272,7 @@ or as HTML:
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">2</th>
+      <th class="kvitable_th"><div><span>2</span></div></th>
       <td class="kvitable_td">even</td>
       <td class="kvitable_td">odd</td>
       <td class="kvitable_td">even</td>
@@ -347,205 +347,205 @@ and the HTML form is
 <table class="kvitable">
   <thead class="kvitable_head">
     <tr class="kvitable_tr">
-      <th class="kvitable_th">millions</th>
-      <th class="kvitable_th">thousands</th>
-      <th class="kvitable_th">hundreds</th>
-      <th class="kvitable_th">tens</th>
-      <th class="kvitable_th">ones</th>
-      <th class="kvitable_th">Value</th>
+      <th class="kvitable_th"><div><span>millions</span></div></th>
+      <th class="kvitable_th"><div><span>thousands</span></div></th>
+      <th class="kvitable_th"><div><span>hundreds</span></div></th>
+      <th class="kvitable_th"><div><span>tens</span></div></th>
+      <th class="kvitable_th"><div><span>ones</span></div></th>
+      <th class="kvitable_th"><div><span>Value</span></div></th>
     </tr>
   </thead>
   <tbody class="kvitable_body">
     <tr class="kvitable_tr">
-      <th rowspan="12" class="kvitable_th">0</th>
-      <th rowspan="4" class="kvitable_th">0</th>
-      <th rowspan="2" class="kvitable_th">1</th>
-      <th rowspan="2" class="kvitable_th">2</th>
-      <th class="kvitable_th">0</th>
+      <th rowspan="12" class="kvitable_th"><div><span>0</span></div></th>
+      <th rowspan="4" class="kvitable_th"><div><span>0</span></div></th>
+      <th rowspan="2" class="kvitable_th"><div><span>1</span></div></th>
+      <th rowspan="2" class="kvitable_th"><div><span>2</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
       <td class="kvitable_td">even</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">1</th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th rowspan="2" class="kvitable_th">2</th>
-      <th rowspan="2" class="kvitable_th">2</th>
-      <th class="kvitable_th">0</th>
+      <th rowspan="2" class="kvitable_th"><div><span>2</span></div></th>
+      <th rowspan="2" class="kvitable_th"><div><span>2</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
       <td class="kvitable_td">even</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">1</th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th rowspan="4" class="kvitable_th">1</th>
-      <th rowspan="2" class="kvitable_th">1</th>
-      <th rowspan="2" class="kvitable_th">2</th>
-      <th class="kvitable_th">0</th>
+      <th rowspan="4" class="kvitable_th"><div><span>1</span></div></th>
+      <th rowspan="2" class="kvitable_th"><div><span>1</span></div></th>
+      <th rowspan="2" class="kvitable_th"><div><span>2</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
       <td class="kvitable_td">even</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">1</th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th rowspan="2" class="kvitable_th">2</th>
-      <th rowspan="2" class="kvitable_th">2</th>
-      <th class="kvitable_th">0</th>
+      <th rowspan="2" class="kvitable_th"><div><span>2</span></div></th>
+      <th rowspan="2" class="kvitable_th"><div><span>2</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
       <td class="kvitable_td">even</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">1</th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th rowspan="4" class="kvitable_th">2</th>
-      <th rowspan="2" class="kvitable_th">1</th>
-      <th rowspan="2" class="kvitable_th">2</th>
-      <th class="kvitable_th">0</th>
+      <th rowspan="4" class="kvitable_th"><div><span>2</span></div></th>
+      <th rowspan="2" class="kvitable_th"><div><span>1</span></div></th>
+      <th rowspan="2" class="kvitable_th"><div><span>2</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
       <td class="kvitable_td">even</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">1</th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th rowspan="2" class="kvitable_th">2</th>
-      <th rowspan="2" class="kvitable_th">2</th>
-      <th class="kvitable_th">0</th>
+      <th rowspan="2" class="kvitable_th"><div><span>2</span></div></th>
+      <th rowspan="2" class="kvitable_th"><div><span>2</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
       <td class="kvitable_td">even</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">1</th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th rowspan="12" class="kvitable_th">1</th>
-      <th rowspan="4" class="kvitable_th">0</th>
-      <th rowspan="2" class="kvitable_th">1</th>
-      <th rowspan="2" class="kvitable_th">2</th>
-      <th class="kvitable_th">0</th>
+      <th rowspan="12" class="kvitable_th"><div><span>1</span></div></th>
+      <th rowspan="4" class="kvitable_th"><div><span>0</span></div></th>
+      <th rowspan="2" class="kvitable_th"><div><span>1</span></div></th>
+      <th rowspan="2" class="kvitable_th"><div><span>2</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
       <td class="kvitable_td">even</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">1</th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th rowspan="2" class="kvitable_th">2</th>
-      <th rowspan="2" class="kvitable_th">2</th>
-      <th class="kvitable_th">0</th>
+      <th rowspan="2" class="kvitable_th"><div><span>2</span></div></th>
+      <th rowspan="2" class="kvitable_th"><div><span>2</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
       <td class="kvitable_td">even</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">1</th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th rowspan="4" class="kvitable_th">1</th>
-      <th rowspan="2" class="kvitable_th">1</th>
-      <th rowspan="2" class="kvitable_th">2</th>
-      <th class="kvitable_th">0</th>
+      <th rowspan="4" class="kvitable_th"><div><span>1</span></div></th>
+      <th rowspan="2" class="kvitable_th"><div><span>1</span></div></th>
+      <th rowspan="2" class="kvitable_th"><div><span>2</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
       <td class="kvitable_td">even</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">1</th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th rowspan="2" class="kvitable_th">2</th>
-      <th rowspan="2" class="kvitable_th">2</th>
-      <th class="kvitable_th">0</th>
+      <th rowspan="2" class="kvitable_th"><div><span>2</span></div></th>
+      <th rowspan="2" class="kvitable_th"><div><span>2</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
       <td class="kvitable_td">even</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">1</th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th rowspan="4" class="kvitable_th">2</th>
-      <th rowspan="2" class="kvitable_th">1</th>
-      <th rowspan="2" class="kvitable_th">2</th>
-      <th class="kvitable_th">0</th>
+      <th rowspan="4" class="kvitable_th"><div><span>2</span></div></th>
+      <th rowspan="2" class="kvitable_th"><div><span>1</span></div></th>
+      <th rowspan="2" class="kvitable_th"><div><span>2</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
       <td class="kvitable_td">even</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">1</th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th rowspan="2" class="kvitable_th">2</th>
-      <th rowspan="2" class="kvitable_th">2</th>
-      <th class="kvitable_th">0</th>
+      <th rowspan="2" class="kvitable_th"><div><span>2</span></div></th>
+      <th rowspan="2" class="kvitable_th"><div><span>2</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
       <td class="kvitable_td">even</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">1</th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th rowspan="12" class="kvitable_th">2</th>
-      <th rowspan="4" class="kvitable_th">0</th>
-      <th rowspan="2" class="kvitable_th">1</th>
-      <th rowspan="2" class="kvitable_th">2</th>
-      <th class="kvitable_th">0</th>
+      <th rowspan="12" class="kvitable_th"><div><span>2</span></div></th>
+      <th rowspan="4" class="kvitable_th"><div><span>0</span></div></th>
+      <th rowspan="2" class="kvitable_th"><div><span>1</span></div></th>
+      <th rowspan="2" class="kvitable_th"><div><span>2</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
       <td class="kvitable_td">even</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">1</th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th rowspan="2" class="kvitable_th">2</th>
-      <th rowspan="2" class="kvitable_th">2</th>
-      <th class="kvitable_th">0</th>
+      <th rowspan="2" class="kvitable_th"><div><span>2</span></div></th>
+      <th rowspan="2" class="kvitable_th"><div><span>2</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
       <td class="kvitable_td">even</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">1</th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th rowspan="4" class="kvitable_th">1</th>
-      <th rowspan="2" class="kvitable_th">1</th>
-      <th rowspan="2" class="kvitable_th">2</th>
-      <th class="kvitable_th">0</th>
+      <th rowspan="4" class="kvitable_th"><div><span>1</span></div></th>
+      <th rowspan="2" class="kvitable_th"><div><span>1</span></div></th>
+      <th rowspan="2" class="kvitable_th"><div><span>2</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
       <td class="kvitable_td">even</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">1</th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th rowspan="2" class="kvitable_th">2</th>
-      <th rowspan="2" class="kvitable_th">2</th>
-      <th class="kvitable_th">0</th>
+      <th rowspan="2" class="kvitable_th"><div><span>2</span></div></th>
+      <th rowspan="2" class="kvitable_th"><div><span>2</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
       <td class="kvitable_td">even</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">1</th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th rowspan="4" class="kvitable_th">2</th>
-      <th rowspan="2" class="kvitable_th">1</th>
-      <th rowspan="2" class="kvitable_th">2</th>
-      <th class="kvitable_th">0</th>
+      <th rowspan="4" class="kvitable_th"><div><span>2</span></div></th>
+      <th rowspan="2" class="kvitable_th"><div><span>1</span></div></th>
+      <th rowspan="2" class="kvitable_th"><div><span>2</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
       <td class="kvitable_td">even</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">1</th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
       <td class="kvitable_td">odd</td>
     </tr>
       <tr class="kvitable_tr">
-      <th rowspan="2" class="kvitable_th">2</th>
-      <th rowspan="2" class="kvitable_th">2</th>
-      <th class="kvitable_th">0</th>
+      <th rowspan="2" class="kvitable_th"><div><span>2</span></div></th>
+      <th rowspan="2" class="kvitable_th"><div><span>2</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
       <td class="kvitable_td">even</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">1</th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
       <td class="kvitable_td">odd</td>
     </tr>
   </tbody>

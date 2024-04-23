@@ -64,122 +64,122 @@ CSS styling!):
 <table class="kvitable">
   <thead class="kvitable_head">
     <tr class="kvitable_tr">
-      <th class="kvitable_th">Location</th>
-      <th class="kvitable_th">Biome</th>
-      <th class="kvitable_th">Category</th>
-      <th class="kvitable_th">Diet</th>
-      <th class="kvitable_th">Name</th>
-      <th class="kvitable_th">Subtype</th>
-      <th class="kvitable_th">Count</th>
+      <th class="kvitable_th"><div><span>Location</span></div></th>
+      <th class="kvitable_th"><div><span>Biome</span></div></th>
+      <th class="kvitable_th"><div><span>Category</span></div></th>
+      <th class="kvitable_th"><div><span>Diet</span></div></th>
+      <th class="kvitable_th"><div><span>Name</span></div></th>
+      <th class="kvitable_th"><div><span>Subtype</span></div></th>
+      <th class="kvitable_th"><div><span>Count</span></div></th>
     </tr>
   </thead>
   <tbody class="kvitable_body">
     <tr class="kvitable_tr">
-      <th class="kvitable_th last_in_group" rowspan=4>LA</th>
-      <th class="kvitable_th last_in_group">Jungle</th>
-      <th class="kvitable_th last_in_group">Animal</th>
-      <th class="kvitable_th last_in_group">Herbivore</th>
-      <th class="kvitable_th last_in_group">Hippo</th>
-      <th class="kvitable_th last_in_group"></th>
+      <th class="kvitable_th last_in_group" rowspan=4><div><span>LA</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Jungle</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Animal</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Herbivore</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Hippo</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span></span></div></th>
       <td class="kvitable_td last_in_group">1</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th last_in_group" rowspan=3>Savannah</th>
-      <th class="kvitable_th last_in_group" rowspan=3>Animal</th>
-      <th class="kvitable_th">Carnivore</th>
-      <th class="kvitable_th">Lion</th>
-      <th class="kvitable_th"></th>
+      <th class="kvitable_th last_in_group" rowspan=3><div><span>Savannah</span></div></th>
+      <th class="kvitable_th last_in_group" rowspan=3><div><span>Animal</span></div></th>
+      <th class="kvitable_th"><div><span>Carnivore</span></div></th>
+      <th class="kvitable_th"><div><span>Lion</span></div></th>
+      <th class="kvitable_th"><div><span></span></div></th>
       <td class="kvitable_td">4</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th" rowspan=2>Herbivore</th>
-      <th class="kvitable_th">Giraffe</th>
-      <th class="kvitable_th"></th>
+      <th class="kvitable_th" rowspan=2><div><span>Herbivore</span></div></th>
+      <th class="kvitable_th"><div><span>Giraffe</span></div></th>
+      <th class="kvitable_th"><div><span></span></div></th>
       <td class="kvitable_td">2</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th last_in_group">Rhino</th>
-      <th class="kvitable_th last_in_group"></th>
+      <th class="kvitable_th last_in_group"><div><span>Rhino</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span></span></div></th>
       <td class="kvitable_td last_in_group">3</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th last_in_group" rowspan=3>Miami</th>
-      <th class="kvitable_th last_in_group">Polar</th>
-      <th class="kvitable_th last_in_group">Bird</th>
-      <th class="kvitable_th last_in_group">Carnivore</th>
-      <th class="kvitable_th last_in_group">Penguin</th>
-      <th class="kvitable_th last_in_group">Gentoo</th>
+      <th class="kvitable_th last_in_group" rowspan=3><div><span>Miami</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Polar</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Bird</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Carnivore</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Penguin</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Gentoo</span></div></th>
       <td class="kvitable_td last_in_group">20</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th last_in_group" rowspan=2>Savannah</th>
-      <th class="kvitable_th last_in_group" rowspan=2>Animal</th>
-      <th class="kvitable_th">Carnivore</th>
-      <th class="kvitable_th">Lion</th>
-      <th class="kvitable_th"></th>
+      <th class="kvitable_th last_in_group" rowspan=2><div><span>Savannah</span></div></th>
+      <th class="kvitable_th last_in_group" rowspan=2><div><span>Animal</span></div></th>
+      <th class="kvitable_th"><div><span>Carnivore</span></div></th>
+      <th class="kvitable_th"><div><span>Lion</span></div></th>
+      <th class="kvitable_th"><div><span></span></div></th>
       <td class="kvitable_td">2</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th last_in_group">Herbivore</th>
-      <th class="kvitable_th last_in_group">Giraffe</th>
-      <th class="kvitable_th last_in_group">Reticulated</th>
+      <th class="kvitable_th last_in_group"><div><span>Herbivore</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Giraffe</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Reticulated</span></div></th>
       <td class="kvitable_td last_in_group">3</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th last_in_group">New York</th>
-      <th class="kvitable_th last_in_group">Savannah</th>
-      <th class="kvitable_th last_in_group">Animal</th>
-      <th class="kvitable_th last_in_group">Carnivore</th>
-      <th class="kvitable_th last_in_group">Lion</th>
-      <th class="kvitable_th last_in_group"></th>
+      <th class="kvitable_th last_in_group"><div><span>New York</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Savannah</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Animal</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Carnivore</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Lion</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span></span></div></th>
       <td class="kvitable_td last_in_group">3</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th last_in_group" rowspan=7>San Diego</th>
-      <th class="kvitable_th last_in_group">Jungle</th>
-      <th class="kvitable_th last_in_group">Animal</th>
-      <th class="kvitable_th last_in_group">Omnivore</th>
-      <th class="kvitable_th last_in_group">Bear</th>
-      <th class="kvitable_th last_in_group">Sun</th>
+      <th class="kvitable_th last_in_group" rowspan=7><div><span>San Diego</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Jungle</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Animal</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Omnivore</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Bear</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Sun</span></div></th>
       <td class="kvitable_td last_in_group">1</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th last_in_group" rowspan=2>Plains</th>
-      <th class="kvitable_th last_in_group" rowspan=2>Animal</th>
-      <th class="kvitable_th" rowspan=2>Omnivore</th>
-      <th class="kvitable_th" rowspan=2>Bear</th>
-      <th class="kvitable_th">Black</th>
+      <th class="kvitable_th last_in_group" rowspan=2><div><span>Plains</span></div></th>
+      <th class="kvitable_th last_in_group" rowspan=2><div><span>Animal</span></div></th>
+      <th class="kvitable_th" rowspan=2><div><span>Omnivore</span></div></th>
+      <th class="kvitable_th" rowspan=2><div><span>Bear</span></div></th>
+      <th class="kvitable_th"><div><span>Black</span></div></th>
       <td class="kvitable_td">1</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th last_in_group">Brown</th>
+      <th class="kvitable_th last_in_group"><div><span>Brown</span></div></th>
       <td class="kvitable_td last_in_group">1</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th last_in_group" rowspan=3>Polar</th>
-      <th class="kvitable_th last_in_group">Animal</th>
-      <th class="kvitable_th last_in_group">Omnivore</th>
-      <th class="kvitable_th last_in_group">Bear</th>
-      <th class="kvitable_th last_in_group">Polar</th>
+      <th class="kvitable_th last_in_group" rowspan=3><div><span>Polar</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Animal</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Omnivore</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Bear</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Polar</span></div></th>
       <td class="kvitable_td last_in_group">1</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th last_in_group" rowspan=2>Bird</th>
-      <th class="kvitable_th" rowspan=2>Carnivore</th>
-      <th class="kvitable_th" rowspan=2>Penguin</th>
-      <th class="kvitable_th">Emperor</th>
+      <th class="kvitable_th last_in_group" rowspan=2><div><span>Bird</span></div></th>
+      <th class="kvitable_th" rowspan=2><div><span>Carnivore</span></div></th>
+      <th class="kvitable_th" rowspan=2><div><span>Penguin</span></div></th>
+      <th class="kvitable_th"><div><span>Emperor</span></div></th>
       <td class="kvitable_td">8</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th last_in_group">Gentoo</th>
+      <th class="kvitable_th last_in_group"><div><span>Gentoo</span></div></th>
       <td class="kvitable_td last_in_group">2</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th last_in_group">Savannah</th>
-      <th class="kvitable_th last_in_group">Animal</th>
-      <th class="kvitable_th last_in_group">Carnivore</th>
-      <th class="kvitable_th last_in_group">Lion</th>
-      <th class="kvitable_th last_in_group"></th>
+      <th class="kvitable_th last_in_group"><div><span>Savannah</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Animal</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Carnivore</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Lion</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span></span></div></th>
       <td class="kvitable_td last_in_group">9</td>
     </tr>
   </tbody>
@@ -228,25 +228,25 @@ And as HTML:
 <table class="kvitable">
   <thead class="kvitable_head">
     <tr class="kvitable_tr">
-      <th class="kvitable_th">Location</th>
-      <th class="kvitable_th">Biome</th>
-      <th class="kvitable_th">Category</th>
-      <th class="kvitable_th">Diet</th>
-      <th class="kvitable_th">Bear</th>
-      <th class="kvitable_th">Giraffe</th>
-      <th class="kvitable_th">Hippo</th>
-      <th class="kvitable_th">Lion</th>
-      <th class="kvitable_th">Penguin</th>
-      <th class="kvitable_th">Rhino</th>
+      <th class="kvitable_th"><div><span>Location</span></div></th>
+      <th class="kvitable_th"><div><span>Biome</span></div></th>
+      <th class="kvitable_th"><div><span>Category</span></div></th>
+      <th class="kvitable_th"><div><span>Diet</span></div></th>
+      <th class="kvitable_th"><div><span>Bear</span></div></th>
+      <th class="kvitable_th"><div><span>Giraffe</span></div></th>
+      <th class="kvitable_th"><div><span>Hippo</span></div></th>
+      <th class="kvitable_th"><div><span>Lion</span></div></th>
+      <th class="kvitable_th"><div><span>Penguin</span></div></th>
+      <th class="kvitable_th"><div><span>Rhino</span></div></th>
       <th class="rightlabel kvitable_th">&nbsp;&larr;Name</th>
     </tr>
   </thead>
   <tbody class="kvitable_body">
     <tr class="kvitable_tr">
-      <th class="kvitable_th last_in_group" rowspan=3>LA</th>
-      <th class="kvitable_th last_in_group">Jungle</th>
-      <th class="kvitable_th last_in_group">Animal</th>
-      <th class="kvitable_th last_in_group">Herbivore</th>
+      <th class="kvitable_th last_in_group" rowspan=3><div><span>LA</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Jungle</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Animal</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Herbivore</span></div></th>
       <td class="kvitable_td last_in_group">
       </td>
       <td class="kvitable_td last_in_group">
@@ -260,9 +260,9 @@ And as HTML:
       </td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th last_in_group" rowspan=2>Savannah</th>
-      <th class="kvitable_th last_in_group" rowspan=2>Animal</th>
-      <th class="kvitable_th">Carnivore</th>
+      <th class="kvitable_th last_in_group" rowspan=2><div><span>Savannah</span></div></th>
+      <th class="kvitable_th last_in_group" rowspan=2><div><span>Animal</span></div></th>
+      <th class="kvitable_th"><div><span>Carnivore</span></div></th>
       <td class="kvitable_td">
       </td>
       <td class="kvitable_td">
@@ -276,7 +276,7 @@ And as HTML:
       </td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th last_in_group">Herbivore</th>
+      <th class="kvitable_th last_in_group"><div><span>Herbivore</span></div></th>
       <td class="kvitable_td last_in_group">
       </td>
       <td class="kvitable_td last_in_group">2</td>
@@ -289,10 +289,10 @@ And as HTML:
       <td class="kvitable_td last_in_group">3</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th last_in_group" rowspan=3>Miami</th>
-      <th class="kvitable_th last_in_group">Polar</th>
-      <th class="kvitable_th last_in_group">Bird</th>
-      <th class="kvitable_th last_in_group">Carnivore</th>
+      <th class="kvitable_th last_in_group" rowspan=3><div><span>Miami</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Polar</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Bird</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Carnivore</span></div></th>
       <td class="kvitable_td last_in_group">
       </td>
       <td class="kvitable_td last_in_group">
@@ -306,9 +306,9 @@ And as HTML:
       </td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th last_in_group" rowspan=2>Savannah</th>
-      <th class="kvitable_th last_in_group" rowspan=2>Animal</th>
-      <th class="kvitable_th">Carnivore</th>
+      <th class="kvitable_th last_in_group" rowspan=2><div><span>Savannah</span></div></th>
+      <th class="kvitable_th last_in_group" rowspan=2><div><span>Animal</span></div></th>
+      <th class="kvitable_th"><div><span>Carnivore</span></div></th>
       <td class="kvitable_td">
       </td>
       <td class="kvitable_td">
@@ -322,7 +322,7 @@ And as HTML:
       </td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th last_in_group">Herbivore</th>
+      <th class="kvitable_th last_in_group"><div><span>Herbivore</span></div></th>
       <td class="kvitable_td last_in_group">
       </td>
       <td class="kvitable_td last_in_group">3</td>
@@ -336,10 +336,10 @@ And as HTML:
       </td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th last_in_group">New York</th>
-      <th class="kvitable_th last_in_group">Savannah</th>
-      <th class="kvitable_th last_in_group">Animal</th>
-      <th class="kvitable_th last_in_group">Carnivore</th>
+      <th class="kvitable_th last_in_group"><div><span>New York</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Savannah</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Animal</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Carnivore</span></div></th>
       <td class="kvitable_td last_in_group">
       </td>
       <td class="kvitable_td last_in_group">
@@ -353,10 +353,10 @@ And as HTML:
       </td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th last_in_group" rowspan=5>San Diego</th>
-      <th class="kvitable_th last_in_group">Jungle</th>
-      <th class="kvitable_th last_in_group">Animal</th>
-      <th class="kvitable_th last_in_group">Omnivore</th>
+      <th class="kvitable_th last_in_group" rowspan=5><div><span>San Diego</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Jungle</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Animal</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Omnivore</span></div></th>
       <td class="kvitable_td last_in_group">1</td>
       <td class="kvitable_td last_in_group">
       </td>
@@ -370,9 +370,9 @@ And as HTML:
       </td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th last_in_group">Plains</th>
-      <th class="kvitable_th last_in_group">Animal</th>
-      <th class="kvitable_th last_in_group">Omnivore</th>
+      <th class="kvitable_th last_in_group"><div><span>Plains</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Animal</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Omnivore</span></div></th>
       <td class="kvitable_td last_in_group">2</td>
       <td class="kvitable_td last_in_group">
       </td>
@@ -386,9 +386,9 @@ And as HTML:
       </td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th last_in_group" rowspan=2>Polar</th>
-      <th class="kvitable_th last_in_group">Animal</th>
-      <th class="kvitable_th last_in_group">Omnivore</th>
+      <th class="kvitable_th last_in_group" rowspan=2><div><span>Polar</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Animal</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Omnivore</span></div></th>
       <td class="kvitable_td last_in_group">1</td>
       <td class="kvitable_td last_in_group">
       </td>
@@ -402,8 +402,8 @@ And as HTML:
       </td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th last_in_group">Bird</th>
-      <th class="kvitable_th last_in_group">Carnivore</th>
+      <th class="kvitable_th last_in_group"><div><span>Bird</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Carnivore</span></div></th>
       <td class="kvitable_td last_in_group">
       </td>
       <td class="kvitable_td last_in_group">
@@ -417,9 +417,9 @@ And as HTML:
       </td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th last_in_group">Savannah</th>
-      <th class="kvitable_th last_in_group">Animal</th>
-      <th class="kvitable_th last_in_group">Carnivore</th>
+      <th class="kvitable_th last_in_group"><div><span>Savannah</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Animal</span></div></th>
+      <th class="kvitable_th last_in_group"><div><span>Carnivore</span></div></th>
       <td class="kvitable_td last_in_group"></td>
       <td class="kvitable_td last_in_group"></td>
       <td class="kvitable_td last_in_group"></td>

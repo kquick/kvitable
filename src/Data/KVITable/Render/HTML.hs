@@ -83,7 +83,7 @@ fmtRender (FmtLine cols) vals mbRLabel = do
                          , class_ " multicol" ]
                   , if l then [ class_ " last_in_group" ] else []
                   ]
-          in th_ (concat $ reverse a) (toHtml v)
+          in th_ (concat $ reverse a) (div_ $ span_ $ toHtml v)
         cell (w,Val h l v) =
           let a = [ [ class_ "kvitable_td" ]
                   , if h == 1 then []

@@ -71,7 +71,7 @@ testHTMLRendering =
 ****
 <table class="kvitable">
   <thead class="kvitable_head">
-    <tr class="kvitable_tr"><th class="kvitable_th">Value</th></tr>
+    <tr class="kvitable_tr"><th class="kvitable_th"><div><span>Value</span></div></th></tr>
   </thead>
   <tbody class="kvitable_body">
   </tbody>
@@ -85,7 +85,7 @@ testHTMLRendering =
 ****
 <table class="kvitable">
   <thead class="kvitable_head">
-    <tr class="kvitable_tr"><th class="kvitable_th">Value</th></tr>
+    <tr class="kvitable_tr"><th class="kvitable_th"><div><span>Value</span></div></th></tr>
   </thead>
   <tbody class="kvitable_body">
     <tr class="kvitable_tr">
@@ -103,9 +103,9 @@ testHTMLRendering =
 <table class="kvitable">
   <thead class="kvitable_head">
     <tr class="kvitable_tr">
-      <th class="kvitable_th">foo</th>
-      <th class="kvitable_th">dog</th>
-      <th class="kvitable_th">Value</th>
+      <th class="kvitable_th"><div><span>foo</span></div></th>
+      <th class="kvitable_th"><div><span>dog</span></div></th>
+      <th class="kvitable_th"><div><span>Value</span></div></th>
     </tr>
   </thead>
   <tbody class="kvitable_body">

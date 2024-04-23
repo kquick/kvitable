@@ -38,42 +38,42 @@ ____ snip ^^ ____
 <table class="kvitable">
   <thead class="kvitable_head">
     <tr class="kvitable_tr">
-      <th rowspan="3" class="kvitable_th">millions</th>
-      <th rowspan="3" class="kvitable_th">thousands</th>
-      <th colspan="4" class="kvitable_th multicol">0</th>
-      <th colspan="4" class="kvitable_th multicol">1</th>
-      <th colspan="4" class="kvitable_th multicol">2</th>
+      <th rowspan="3" class="kvitable_th"><div><span>millions</span></div></th>
+      <th rowspan="3" class="kvitable_th"><div><span>thousands</span></div></th>
+      <th colspan="4" class="kvitable_th multicol"><div><span>0</span></div></th>
+      <th colspan="4" class="kvitable_th multicol"><div><span>1</span></div></th>
+      <th colspan="4" class="kvitable_th multicol"><div><span>2</span></div></th>
       <th class="rightlabel kvitable_th">&nbsp;&larr;hundreds</th>
     </tr>
     <tr class="kvitable_tr">
-      <th colspan="2" class="kvitable_th multicol">0</th>
-      <th colspan="2" class="kvitable_th multicol">2</th>
-      <th colspan="2" class="kvitable_th multicol">0</th>
-      <th colspan="2" class="kvitable_th multicol">2</th>
-      <th colspan="2" class="kvitable_th multicol">0</th>
-      <th colspan="2" class="kvitable_th multicol">2</th>
+      <th colspan="2" class="kvitable_th multicol"><div><span>0</span></div></th>
+      <th colspan="2" class="kvitable_th multicol"><div><span>2</span></div></th>
+      <th colspan="2" class="kvitable_th multicol"><div><span>0</span></div></th>
+      <th colspan="2" class="kvitable_th multicol"><div><span>2</span></div></th>
+      <th colspan="2" class="kvitable_th multicol"><div><span>0</span></div></th>
+      <th colspan="2" class="kvitable_th multicol"><div><span>2</span></div></th>
       <th class="rightlabel kvitable_th">&nbsp;&larr;tens</th>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">0</th>
-      <th class="kvitable_th">1</th>
-      <th class="kvitable_th">0</th>
-      <th class="kvitable_th">1</th>
-      <th class="kvitable_th">0</th>
-      <th class="kvitable_th">1</th>
-      <th class="kvitable_th">0</th>
-      <th class="kvitable_th">1</th>
-      <th class="kvitable_th">0</th>
-      <th class="kvitable_th">1</th>
-      <th class="kvitable_th">0</th>
-      <th class="kvitable_th">1</th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
       <th class="rightlabel kvitable_th">&nbsp;&larr;ones</th>
     </tr>
   </thead>
   <tbody class="kvitable_body">
     <tr class="kvitable_tr">
-      <th rowspan="3" class="kvitable_th">0</th>
-      <th class="kvitable_th">0</th>
+      <th rowspan="3" class="kvitable_th"><div><span>0</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
       <td class="kvitable_td"></td>
       <td class="kvitable_td"></td>
       <td class="kvitable_td"></td>
@@ -88,7 +88,7 @@ ____ snip ^^ ____
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">1</th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
       <td class="kvitable_td"></td>
       <td class="kvitable_td"></td>
       <td class="kvitable_td"></td>
@@ -103,7 +103,7 @@ ____ snip ^^ ____
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">2</th>
+      <th class="kvitable_th"><div><span>2</span></div></th>
       <td class="kvitable_td"></td>
       <td class="kvitable_td"></td>
       <td class="kvitable_td"></td>
@@ -118,8 +118,8 @@ ____ snip ^^ ____
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th rowspan="3" class="kvitable_th">1</th>
-      <th class="kvitable_th">0</th>
+      <th rowspan="3" class="kvitable_th"><div><span>1</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
       <td class="kvitable_td"></td>
       <td class="kvitable_td"></td>
       <td class="kvitable_td"></td>
@@ -134,7 +134,7 @@ ____ snip ^^ ____
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">1</th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
       <td class="kvitable_td"></td>
       <td class="kvitable_td"></td>
       <td class="kvitable_td"></td>
@@ -149,7 +149,7 @@ ____ snip ^^ ____
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">2</th>
+      <th class="kvitable_th"><div><span>2</span></div></th>
       <td class="kvitable_td"></td>
       <td class="kvitable_td"></td>
       <td class="kvitable_td"></td>
@@ -164,8 +164,8 @@ ____ snip ^^ ____
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th rowspan="3" class="kvitable_th">2</th>
-      <th class="kvitable_th">0</th>
+      <th rowspan="3" class="kvitable_th"><div><span>2</span></div></th>
+      <th class="kvitable_th"><div><span>0</span></div></th>
       <td class="kvitable_td"></td>
       <td class="kvitable_td"></td>
       <td class="kvitable_td"></td>
@@ -180,7 +180,7 @@ ____ snip ^^ ____
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">1</th>
+      <th class="kvitable_th"><div><span>1</span></div></th>
       <td class="kvitable_td"></td>
       <td class="kvitable_td"></td>
       <td class="kvitable_td"></td>
@@ -195,7 +195,7 @@ ____ snip ^^ ____
       <td class="kvitable_td">odd</td>
     </tr>
     <tr class="kvitable_tr">
-      <th class="kvitable_th">2</th>
+      <th class="kvitable_th"><div><span>2</span></div></th>
       <td class="kvitable_td"></td>
       <td class="kvitable_td"></td>
       <td class="kvitable_td"></td>
