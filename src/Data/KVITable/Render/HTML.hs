@@ -204,7 +204,7 @@ renderSeq cfg fmt keys t =
     mkVal = Val 1 False . T.pack . show . PP.pretty
     htmlRows :: [Key] -> KeySpec -> [ [FmtVal] ]
     htmlRows [] path =
-      let v = lookup path t
+      let v = lookup' path t
           skip = case v of
             Nothing -> hideBlankRows cfg
             Just _ -> False
@@ -248,7 +248,7 @@ renderSeq cfg fmt keys t =
     multivalRows (key:[]) path =
       let keyvals = ordering $ fromMaybe [] $ L.lookup key $ t ^. keyVals
           ordering = if sortKeyVals cfg then sortWithNums else id
-      in (\v -> mkVal <$> lookup (path <> [(key,v)]) t) <$> keyvals
+      in (\v -> mkVal <$> lookup' (path <> [(key,v)]) t) <$> keyvals
     multivalRows (key:kseq) path =
       let keyvals = ordering $ fromMaybe [] $ L.lookup key $ t ^. keyVals
           ordering = if sortKeyVals cfg then sortWithNums else id

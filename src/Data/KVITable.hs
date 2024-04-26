@@ -17,6 +17,7 @@ module Data.KVITable
   , fromList
   , toList
   , Data.KVITable.lookup
+  , lookup'
   , keyVals
   , keyValGen
   , valueColName
@@ -188,6 +189,13 @@ valueColName f t = (\n -> t { valuecolName = n } ) <$> f (valuecolName t)
 -- out of order and the lookup will still succeed (if there is a value
 -- for the normalized keyspec), but it will be faster to use the
 -- normalized key directly.
+--
+-- The performance of lookup degrades exponentially on a sparse KVITable: an
+-- unset KVITable entry is indistinguishable from a non-normalized keyspec, so if
+-- the initial query fails, the keyspec is normalized and then the lookup is
+-- re-attempted.  This may be fine for an individual query, but for large numbers
+-- of queries this is excessively slow.  To mitigate this, the lookup' can be
+-- used, which assumes the use of a normalized key.
 
 lookup :: KeySpec -> KVITable v -> Maybe v
 lookup keyspec t = case Map.lookup keyspec $ contents t of
@@ -204,6 +212,13 @@ normalizeKeySpec t keyspec =
                   else s -- no level added, so this should never match in the Map
         Nothing -> s <> [(k, keyvalGen t k)]
   in foldl keyandval [] (keyvals t)
+
+-- | Like 'lookup', but assumes a normalized key (all key elements specified, and
+-- in the proper order).  Faster than 'lookup', but will return false negatives
+-- if not used with a normalized key.
+
+lookup' :: KeySpec -> KVITable v -> Maybe v
+lookup' keyspec = Map.lookup keyspec . contents
 
 -- | Inserts a new cell value into the table at the specified keyspec
 -- location.  The keyspec may be minimally specified and out-of-order.
