@@ -81,10 +81,10 @@ renderingKeyVals cfg inpKvs =
                            (if origNumCols > maxNumCols
                              then if numStackedCols <= maxNumCols
                                   then numStackedCols
-                                  else allowedNumRows
+                                  else allowedNumCols
                              else numStackedCols
                            )
-          eachRowCols = numStackedCols -- min maxNumCols numStackedCols
+          eachRowCols = min maxNumCols numStackedCols
           okKvsRows = snd $ trimStacked False eachRowCols allowedNumRows kvsRows
       in okKvsRows <> okKvsCols
 
