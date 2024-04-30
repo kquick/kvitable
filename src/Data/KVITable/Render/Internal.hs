@@ -61,26 +61,31 @@ renderingKeyVals cfg inpKvs =
                        , mempty
                        )
                   else kvs
+          -- n.b. maxCols is not really useful here, since all but the last
+          -- column are headers and values are only shown in that last column.
       in snd $ trimStacked True 1 maxNumKeys okKvs
     Just c ->
-      let maxNumCols = maxCells cfg
+      let maxNumCols = min (maxCells cfg) (maxCols cfg)
           (kvsRows, kvsCols) = span ((c /=) . fst) kvs
           numRegularColKvs = let v = length kvs - length kvsCols
                              in if v < 0 then error "BAD1" else toEnum v
           numStackedCols = countStacked kvsCols
           origNumCols = numRegularColKvs + numStackedCols
-          allowedNumCols = if numRegularColKvs > maxNumCols
-                           then 1
-                           else maxNumCols - numRegularColKvs
+          allowedNumCols = subOrDef 1 maxNumCols numRegularColKvs
           okKvsCols = if origNumCols > maxNumCols
                       then if numStackedCols <= maxNumCols
                            then kvsCols
                            else snd $ trimStacked False 1 allowedNumCols kvsCols
                       else kvsCols
-          allowedNumRows = if maxNumCols < numStackedCols
-                           then 1
-                           else maxNumCols - numStackedCols
-          okKvsRows = snd $ trimStacked False numStackedCols allowedNumRows kvsRows
+          allowedNumRows = subOrDef 1 (maxCells cfg)
+                           (if origNumCols > maxNumCols
+                             then if numStackedCols <= maxNumCols
+                                  then numStackedCols
+                                  else allowedNumRows
+                             else numStackedCols
+                           )
+          eachRowCols = numStackedCols -- min maxNumCols numStackedCols
+          okKvsRows = snd $ trimStacked False eachRowCols allowedNumRows kvsRows
       in okKvsRows <> okKvsCols
 
   where

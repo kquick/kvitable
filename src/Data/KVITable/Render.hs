@@ -28,6 +28,7 @@ defaultRenderConfig = RenderConfig
   , rowGroup      = []
   , caption       = Nothing
   , maxCells      = 40000 -- even this is probably too big
+  , maxCols       = 40000 -- by default, this should be >= maxCells
   }
 
 -- | The 'RenderConfig' specifies the various controls and
@@ -90,4 +91,11 @@ data RenderConfig = RenderConfig
     --  probably reasonably performant.  At 500x500, the browser is likely to be
     --  very sluggish, with visible delays in rendering visible regions during
     --  scrolling.
+
+  , maxCols :: Natural
+    -- ^ The maximum number of columns to render.  This limit is only useful if
+    -- it is set to less than the 'maxCells' value, and it is useful in that case
+    -- to ensure that more than one (partial) row is displayed.  The 'maxCells'
+    -- value takes priority over this value.  See the 'maxCells' for more
+    -- information.
   }
