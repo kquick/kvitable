@@ -23,7 +23,8 @@ import qualified Data.Text as T
 import           Lens.Micro ( (^.) )
 import qualified Prettyprinter as PP
 
-import           Data.KVITable
+import           Data.KVITable ( KVITable, KeySpec, Key, keyVals )
+import qualified Data.KVITable as KVIT
 import           Data.KVITable.Render
 
 import           Prelude hiding ( lookup )
@@ -131,9 +132,9 @@ renderHdrs cfg t keys =
 hdrstep :: PP.Pretty v => RenderConfig -> KVITable v -> [Key] -> [HeaderLine]
 hdrstep _cfg t [] =
   -- colStackAt wasn't recognized, so devolve into a non-colstack table
-  let valcoltxt = t ^. valueColName
+  let valcoltxt = t ^. KVIT.valueColName
       valcoltsz = T.length valcoltxt
-      valsizes  = length . show . PP.pretty . snd <$> toList t
+      valsizes  = length . show . PP.pretty . snd <$> KVIT.toList t
       valwidth  = maximum $ valcoltsz : valsizes
   in [ HdrLine (fmtLine [valwidth]) [TxtVal valcoltxt] "" ]
 hdrstep cfg t (key:keys) =
@@ -154,7 +155,7 @@ hdrvalstep cfg t steppath (key:[]) =
       ordering = if sortKeyVals cfg then sortWithNums else id
       cvalWidths kv = fmap (length . show . PP.pretty . snd) $
                       L.filter ((L.isSuffixOf (steppath <> [(key, kv)])) . fst) $
-                      toList t
+                      KVIT.toList t
       colWidth kv = let cvw = cvalWidths kv
                     in if and [ hideBlankCols cfg, sum cvw == 0 ]
                     then 0
@@ -210,7 +211,7 @@ renderSeq cfg fmt keys kvitbl = fmtRender fmt . snd <$> asciiRows keys []
     ordering = if sortKeyVals cfg then sortWithNums else id
     asciiRows :: [Key] -> KeySpec -> [ (Bool, [FmtVal]) ]
     asciiRows [] path =
-      let v = lookup path kvitbl
+      let v = KVIT.lookup' path kvitbl
           skip = case v of
                    Nothing -> hideBlankRows cfg
                    Just _  -> False
@@ -243,7 +244,7 @@ renderSeq cfg fmt keys kvitbl = fmtRender fmt . snd <$> asciiRows keys []
     multivalRows (key:[]) path =
       let keyvals = maybe mempty ordering $ L.lookup key $ kvitbl ^. keyVals
           showEnt = T.pack . show . PP.pretty
-      in (\v -> (showEnt <$> (lookup (path <> [(key,v)]) kvitbl))) <$> keyvals
+      in (\v -> (showEnt <$> (KVIT.lookup' (path <> [(key,v)]) kvitbl))) <$> keyvals
     multivalRows (key:kseq) path =
       let keyvals = maybe mempty ordering $ L.lookup key  $ kvitbl ^. keyVals
       in concatMap (\v -> multivalRows kseq (path <> [(key,v)])) keyvals

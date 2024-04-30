@@ -28,7 +28,7 @@ import           Lens.Micro ( (^.) )
 import           Lucid
 import qualified Prettyprinter as PP
 
-import           Data.KVITable
+import           Data.KVITable as KVIT
 import           Data.KVITable.Render
 
 import           Prelude hiding ( lookup )
@@ -153,7 +153,7 @@ hdrvalstep cfg t steppath (key:[]) =
       ordering = if sortKeyVals cfg then sortWithNums else id
       cvalWidths kv = fmap (length . show . PP.pretty . snd) $
                       L.filter ((L.isSuffixOf (steppath <> [(key, kv)])) . fst) $
-                      toList t
+                      KVIT.toList t
       cwidth c = if and [ hideBlankCols cfg
                         , 0 == (sum $ cvalWidths c) ]
                  then 0
