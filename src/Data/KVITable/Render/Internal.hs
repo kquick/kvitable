@@ -2,20 +2,15 @@ module Data.KVITable.Render.Internal where
 
 import qualified Data.List as L
 import qualified Data.Text as T
-import           Lens.Micro ( (^.) )
 
 import           Data.KVITable
-import           Data.KVITable.Render
 
 
 -- | Given some KeyVals, sort them if the configuration indicates they should be
 -- sorted.
 
-sortedKeyVals :: RenderConfig -> KVITable a -> Key -> [KeyVal]
-sortedKeyVals cfg kvitbl key =
-  let ordering = if sortKeyVals cfg then sortWithNums else id
-  in maybe mempty ordering $ L.lookup key $ kvitbl ^. keyVals
-
+sortedKeyVals :: KeyVals -> Key -> [KeyVal]
+sortedKeyVals kmap key = maybe mempty id $ L.lookup key kmap
 
 
 -- | Sorting for KeyVals.  If the value starts or ends with a digit,

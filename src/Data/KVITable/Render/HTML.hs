@@ -44,8 +44,11 @@ import           Prelude hiding ( lookup )
 render :: PP.Pretty v => RenderConfig -> KVITable v -> Text
 render cfg t =
   let kseq = fst <$> t ^. keyVals
-      (fmt, hdr) = renderHdrs cfg t kseq
-      bdy = renderSeq cfg fmt kseq t
+      kmap = if sortKeyVals cfg
+             then fmap sortWithNums <$> t ^. keyVals
+             else t ^. keyVals
+      (fmt, hdr) = renderHdrs cfg kmap t kseq
+      bdy = renderSeq cfg fmt kmap kseq t
   in TL.toStrict $ renderText $
      table_ [ class_ "kvitable" ] $
      do maybe mempty (caption_ . toHtml) $ Data.KVITable.Render.caption cfg
@@ -119,26 +122,26 @@ hdrFmt :: HeaderLine -> FmtLine
 hdrFmt (HdrLine fmt _ _) = fmt
 
 renderHdrs :: PP.Pretty v
-           => RenderConfig -> KVITable v -> Keys
+           => RenderConfig -> KeyVals -> KVITable v -> Keys
            -> ( FmtLine, Html () )
-renderHdrs cfg t keys = ( rowfmt, sequence_ hdrs )
+renderHdrs cfg kmap t keys = ( rowfmt, sequence_ hdrs )
   where
     hdrs = fmap renderHdr hrows
-    (hrows, rowfmt) = hdrstep cfg t keys
+    (hrows, rowfmt) = hdrstep cfg t kmap keys
     renderHdr (HdrLine fmt hdrvals trailer) = fmtRender fmt trailer hdrvals
 
 hdrstep :: PP.Pretty v
-        => RenderConfig -> KVITable v -> Keys
+        => RenderConfig -> KVITable v -> KeyVals -> Keys
         -> (NEL.NonEmpty HeaderLine, FmtLine)
-hdrstep _cfg t [] =
+hdrstep _cfg t _kmap [] =
   ( HdrLine (FmtLine $ single 1) (single $ Hdr 1 False $ t ^. valueColName) Nothing :| mempty
   , FmtLine $ single 1
   )
-hdrstep cfg t ks@(key : keys) =
+hdrstep cfg t kmap ks@(key : keys) =
   if colStackAt cfg == Just key
-  then hdrvalstep cfg t mempty ks -- switch to column stacking mode
+  then hdrvalstep cfg t kmap mempty ks -- switch to column stacking mode
   else
-    let (nexthdr0 :| nexthdrs, lowestfmt) = hdrstep cfg t keys
+    let (nexthdr0 :| nexthdrs, lowestfmt) = hdrstep cfg t kmap keys
         (HdrLine fmt vals tr) = nexthdr0
         fmt' = fmtAddColLeft 1 fmt
         val = Hdr (length nexthdrs + 1) False key
@@ -147,24 +150,24 @@ hdrstep cfg t ks@(key : keys) =
        )
 
 hdrvalstep :: PP.Pretty v
-           => RenderConfig -> KVITable v -> KeySpec -> Keys
+           => RenderConfig -> KVITable v -> KeyVals -> KeySpec -> Keys
            -> (NEL.NonEmpty HeaderLine, FmtLine)
-hdrvalstep _ _ _ [] = error "HTML hdrvalstep with empty keys after matching colStackAt -- impossible"
-hdrvalstep cfg t steppath (key : []) =
-  let titles = sortedKeyVals cfg t key
+hdrvalstep _ _ _ _ [] = error "HTML hdrvalstep with empty keys after matching colStackAt -- impossible"
+hdrvalstep cfg t kmap steppath (key : []) =
+  let titles = sortedKeyVals kmap key
       cvalWidths kv = fmap (length . show . PP.pretty . snd) $
                       L.filter ((L.isSuffixOf (snoc steppath (key, kv))) . fst)
                       $ KVIT.toList t
       cwidth c = if hideBlankCols cfg && 0 == (sum $ cvalWidths c) then 0 else 1
       fmt = FmtLine $ fmap cwidth titles
   in ( HdrLine fmt (Hdr 1 False <$> titles) (Just key) :| mempty, fmt)
-hdrvalstep cfg t steppath (key : keys) =
-  case sortedKeyVals cfg t key of
+hdrvalstep cfg t kmap steppath (key : keys) =
+  case sortedKeyVals kmap key of
        [] -> error "cannot happen"
        (ttl:ttls) ->
          let
            titles = ttl :| ttls
-           subhdrsV v = hdrvalstep cfg t (snoc steppath (key,v)) keys
+           subhdrsV v = hdrvalstep cfg t kmap (snoc steppath (key,v)) keys
            subTtlHdrs :: NEL.NonEmpty (NEL.NonEmpty HeaderLine, FmtLine)
            subTtlHdrs = subhdrsV <$> titles
            subhdrs :: NEL.NonEmpty (NEL.NonEmpty HeaderLine, FmtLine)
@@ -194,8 +197,8 @@ hdrvalstep cfg t steppath (key : keys) =
 ----------------------------------------------------------------------
 
 renderSeq :: PP.Pretty v
-          => RenderConfig -> FmtLine -> Keys -> KVITable v -> Html ()
-renderSeq cfg fmt keys t =
+          => RenderConfig -> FmtLine -> KeyVals -> Keys -> KVITable v -> Html ()
+renderSeq cfg fmt kmap keys t =
   let lst = htmlRows keys mempty
       rndr = fmtRender fmt Nothing
   in sequence_ (each rndr lst)
@@ -221,7 +224,7 @@ renderSeq cfg fmt keys t =
                 fmap (fmap (maybe (Val 1 False "") id)) . filterBlank
           in filterOrDefaultBlankRows $ single $ multivalRows ks path
       | otherwise =
-          let keyvals = sortedKeyVals cfg t key
+          let keyvals = sortedKeyVals kmap key
               subrows keyval = htmlRows kseq $ snoc path (key,keyval)
 
               endOfGroup = key `elem` rowGroup cfg
@@ -249,8 +252,8 @@ renderSeq cfg fmt keys t =
 
     multivalRows [] _ = error "HTML multivalRows cannot be called with no keys!"
     multivalRows (key : []) path =
-      let keyvals = sortedKeyVals cfg t key
+      let keyvals = sortedKeyVals kmap key
       in (\v -> mkVal <$> lookup' (snoc path (key,v)) t) <$> keyvals
     multivalRows (key : kseq) path =
-      let keyvals = sortedKeyVals cfg t key
+      let keyvals = sortedKeyVals kmap key
       in concatMap (\v -> multivalRows kseq (snoc path (key,v))) keyvals

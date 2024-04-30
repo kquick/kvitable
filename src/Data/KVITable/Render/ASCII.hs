@@ -23,7 +23,7 @@ import qualified Data.Text as T
 import           Lens.Micro ( (^.) )
 import qualified Prettyprinter as PP
 
-import           Data.KVITable ( KVITable, KeySpec, Key, keyVals )
+import           Data.KVITable ( KVITable, KeySpec, Key, KeyVals, keyVals )
 import qualified Data.KVITable as KVIT
 import           Data.KVITable.Internal.Helpers
 import           Data.KVITable.Render
@@ -38,8 +38,11 @@ import           Prelude hiding ( lookup )
 render :: PP.Pretty v => RenderConfig -> KVITable v -> Text
 render cfg t =
   let kseq = fst <$> t ^. keyVals
-      (fmt, hdr) = renderHdrs cfg t kseq
-      bdy = renderSeq cfg fmt kseq t
+      kmap = if sortKeyVals cfg
+             then fmap sortWithNums <$> t ^. keyVals
+             else t ^. keyVals
+      (fmt, hdr) = renderHdrs cfg t kmap kseq
+      bdy = renderSeq cfg fmt kmap kseq t
   in T.unlines $ hdr <> bdy
 
 ----------------------------------------------------------------------
@@ -117,8 +120,8 @@ type Trailer = Text
 hdrFmt :: HeaderLine -> FmtLine
 hdrFmt (HdrLine fmt _ _) = fmt
 
-renderHdrs :: PP.Pretty v => RenderConfig -> KVITable v -> Keys -> (FmtLine, [Text])
-renderHdrs cfg t keys =
+renderHdrs :: PP.Pretty v => RenderConfig -> KVITable v -> KeyVals -> Keys -> (FmtLine, [Text])
+renderHdrs cfg t kmap keys =
   ( lastFmt
   , [ fmtRender fmt hdrvals
       <> (if T.null trailer then "" else (" <- " <> trailer))
@@ -126,33 +129,33 @@ renderHdrs cfg t keys =
     ] <>
     (single $ fmtRender lastFmt (replicate (fmtColCnt lastFmt) Separator)) )
   where
-    hrows = hdrstep cfg t keys
+    hrows = hdrstep cfg t kmap keys
     lastFmt = case reverse hrows of
                 [] -> fmtLine mempty
                 (hrow:_) -> hdrFmt hrow
 
-hdrstep :: PP.Pretty v => RenderConfig -> KVITable v -> Keys -> [HeaderLine]
-hdrstep _cfg t [] =
+hdrstep :: PP.Pretty v => RenderConfig -> KVITable v -> KeyVals -> Keys -> [HeaderLine]
+hdrstep _cfg t _kmap [] =
   -- colStackAt wasn't recognized, so devolve into a non-colstack table
   let valcoltxt = t ^. KVIT.valueColName
       valcoltsz = T.length valcoltxt
       valsizes  = length . show . PP.pretty . snd <$> KVIT.toList t
       valwidth  = maxOf 0 $ valcoltsz : valsizes
   in single $ HdrLine (fmtLine $ single valwidth) (single (TxtVal valcoltxt)) ""
-hdrstep cfg t ks@(key : keys) =
+hdrstep cfg t kmap ks@(key : keys) =
   if colStackAt cfg == Just key
-  then hdrvalstep cfg t mempty ks  -- switch to column-stacking mode
+  then hdrvalstep cfg t kmap mempty ks  -- switch to column-stacking mode
   else
     let keyw = max (T.length key)
                $ maybe 0 (maxOf 0 . fmap T.length) (L.lookup key $ t ^. keyVals)
         mkhdr (hs, v) (HdrLine fmt hdrvals trailer) =
           ( HdrLine (fmtAddColLeft keyw fmt) (TxtVal v : hdrvals) trailer : hs , "")
-    in reverse $ fst $ foldl mkhdr (mempty, key) $ hdrstep cfg t keys
+    in reverse $ fst $ foldl mkhdr (mempty, key) $ hdrstep cfg t kmap keys
          -- first line shows hdrval for non-colstack'd columns, others are blank
 
-hdrvalstep :: PP.Pretty v => RenderConfig -> KVITable v -> KeySpec -> Keys -> [HeaderLine]
-hdrvalstep cfg t steppath (key : []) =
-  let titles = sortedKeyVals cfg t key
+hdrvalstep :: PP.Pretty v => RenderConfig -> KVITable v -> KeyVals -> KeySpec -> Keys -> [HeaderLine]
+hdrvalstep cfg t kmap steppath (key : []) =
+  let titles = sortedKeyVals kmap key
       cvalWidths kv = fmap (length . show . PP.pretty . snd) $
                       filter ((L.isSuffixOf (snoc steppath (key, kv))) . fst)
                       $ KVIT.toList t
@@ -165,9 +168,9 @@ hdrvalstep cfg t steppath (key : []) =
                 then (replicate (length cwidths) (maxOf 0 cwidths))
                 else cwidths
   in single $ HdrLine (fmtLine $ fmtcols) (TxtVal <$> titles) key
-hdrvalstep cfg t steppath (key : keys) =
-  let vals = sortedKeyVals cfg t key
-      subhdrsV v = hdrvalstep cfg t (snoc steppath (key,v)) keys
+hdrvalstep cfg t kmap steppath (key : keys) =
+  let vals = sortedKeyVals kmap key
+      subhdrsV v = hdrvalstep cfg t kmap (snoc steppath (key,v)) keys
       subTtlHdrs = let subAtVal v = (T.length v, subhdrsV v)
                    in fmap subAtVal vals
       szexts = let subW (hl,sh) =
@@ -201,10 +204,10 @@ hdrvalstep cfg t steppath (key : keys) =
         HdrLine (FmtLine (c<>c') s j) (v<>v') r
       tvals = CenterVal <$> vals
   in HdrLine (fmtLine szhdrs) tvals key : rsz_extsubhdrs
-hdrvalstep _ _ _ [] = error "ASCII hdrvalstep with empty keys after matching colStackAt -- impossible"
+hdrvalstep _ _ _ _ [] = error "ASCII hdrvalstep with empty keys after matching colStackAt -- impossible"
 
-renderSeq :: PP.Pretty v => RenderConfig -> FmtLine -> Keys -> KVITable v -> [Text]
-renderSeq cfg fmt keys kvitbl = fmtRender fmt . snd <$> asciiRows keys mempty
+renderSeq :: PP.Pretty v => RenderConfig -> FmtLine -> KeyVals -> Keys -> KVITable v -> [Text]
+renderSeq cfg fmt kmap keys kvitbl = fmtRender fmt . snd <$> asciiRows keys mempty
   where
     filterBlank = if hideBlankRows cfg
                   then L.filter (not . all isNothing . snd)
@@ -235,14 +238,14 @@ renderSeq cfg fmt keys kvitbl = fmtRender fmt . snd <$> asciiRows keys mempty
                                $ foldl leftAdd (mempty, keyval) $ subrows keyval
             leftAdd (acc,kv) (b,subrow) = (snoc acc (b, TxtVal kv : subrow),
                                            if rowRepeat cfg then kv else "")
-        in concat (genSubRow <$> (sortedKeyVals cfg kvitbl key))
+        in concat (genSubRow <$> (sortedKeyVals kmap key))
 
     multivalRows :: Keys -> KeySpec -> [ Maybe Text ]
     multivalRows (key : []) path =
-      let keyvals = sortedKeyVals cfg kvitbl key
+      let keyvals = sortedKeyVals kmap key
           showEnt = T.pack . show . PP.pretty
       in (\v -> (showEnt <$> (KVIT.lookup' (snoc path (key,v)) kvitbl))) <$> keyvals
     multivalRows (key : kseq) path =
-      let keyvals = sortedKeyVals cfg kvitbl key
+      let keyvals = sortedKeyVals kmap key
       in concatMap (\v -> multivalRows kseq (snoc path (key,v))) keyvals
     multivalRows [] _ = error "multivalRows cannot be called with no keys!"
