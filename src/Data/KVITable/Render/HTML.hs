@@ -70,8 +70,8 @@ type Height = Int
 type LastInGroup = Bool
 type RightLabel = Text
 
-fmtRender :: FmtLine -> [FmtVal] -> Maybe RightLabel -> Html ()
-fmtRender (FmtLine cols) vals mbRLabel = do
+fmtRender :: FmtLine -> Maybe RightLabel -> [FmtVal] -> Html ()
+fmtRender (FmtLine cols) mbRLabel vals = do
   tr_ [ class_ "kvitable_tr" ] $
     let excessColCnt = length cols - length vals
         cell (w,Hdr h l v) =
@@ -123,7 +123,7 @@ renderHdrs cfg t keys = ( rowfmt, sequence_ hdrs )
   where
     hdrs = fmap renderHdr hrows
     (hrows, rowfmt) = hdrstep cfg t keys
-    renderHdr (HdrLine fmt hdrvals trailer) = fmtRender fmt hdrvals trailer
+    renderHdr (HdrLine fmt hdrvals trailer) = fmtRender fmt trailer hdrvals
 
 hdrstep :: PP.Pretty v
         => RenderConfig -> KVITable v -> [Key]
@@ -162,7 +162,7 @@ hdrvalstep cfg t steppath (key:[]) =
   in ( HdrLine fmt (Hdr 1 False <$> titles) (Just key) :| [], fmt)
 hdrvalstep cfg t steppath (key:keys) =
   let ordering = if sortKeyVals cfg then sortWithNums else id
-  in case ordering $ fromMaybe [] $ L.lookup key $ t ^. keyVals of
+  in case maybe mempty ordering $ L.lookup key $ t ^. keyVals of
        [] -> error "cannot happen"
        (ttl:ttls) ->
          let
@@ -199,8 +199,17 @@ hdrvalstep cfg t steppath (key:keys) =
 renderSeq :: PP.Pretty v
           => RenderConfig -> FmtLine -> [Key] -> KVITable v -> Html ()
 renderSeq cfg fmt keys t =
-  mapM_ (flip (fmtRender fmt) Nothing) $ htmlRows keys []
+  let lst = htmlRows keys []
+      rndr = fmtRender fmt Nothing
+  in sequence_ (each rndr lst)
   where
+    each = map
+
+    filterBlank = if hideBlankRows cfg
+                  then L.filter (not . all isNothing)
+                  else id
+    ordering = if sortKeyVals cfg then sortWithNums else id
+
     mkVal = Val 1 False . T.pack . show . PP.pretty
     htmlRows :: [Key] -> KeySpec -> [ [FmtVal] ]
     htmlRows [] path =
@@ -213,22 +222,21 @@ renderSeq cfg fmt keys t =
     htmlRows (key:kseq) path
       | colStackAt cfg == Just key =
           let filterOrDefaultBlankRows =
-                fmap (fmap (maybe (Val 1 False "") id)) .
-                if hideBlankRows cfg
-                then L.filter (not . all isNothing)
-                else id
+                fmap (fmap (maybe (Val 1 False "") id)) . filterBlank
           in filterOrDefaultBlankRows $
              [ multivalRows (key:kseq) path ]
       | otherwise =
-          let keyvals = ordering $ fromMaybe [] $ L.lookup key $ t ^. keyVals
-              ordering = if sortKeyVals cfg then sortWithNums else id
+          let keyvals = maybe mempty ordering $ L.lookup key $ t ^. keyVals
               subrows keyval = htmlRows kseq $ path <> [(key,keyval)]
+
               endOfGroup = key `elem` rowGroup cfg
-              addSubrows ret keyval =
+              genSubrows keyval =
                 let sr = subrows keyval
-                in ret <> (fst $
-                           foldl (leftAdd (length sr)) ([],Just keyval) $
-                           reverse $ zip (endOfGroup: L.repeat False) $ reverse sr)
+                in fst
+                   $ foldl (leftAdd (length sr)) ([],Just keyval)
+                   $ reverse
+                   $ zip (endOfGroup: L.repeat False)
+                   $ reverse sr
               leftAdd nrows (acc,mb'kv) (endGrp, subrow) =
                 let sr = setValGrouping endGrp <$> subrow
                     setValGrouping g (Val h g' v) = Val h (g || g') v
@@ -241,15 +249,13 @@ renderSeq cfg fmt keys t =
                                                in Hdr w endOfGroup kv : sr
                               ) ]
                    , if rowRepeat cfg then mb'kv else Nothing)
-          in foldl addSubrows [] keyvals
+          in concat $ each genSubrows keyvals
 
 
     multivalRows [] _ = error "HTML multivalRows cannot be called with no keys!"
     multivalRows (key:[]) path =
-      let keyvals = ordering $ fromMaybe [] $ L.lookup key $ t ^. keyVals
-          ordering = if sortKeyVals cfg then sortWithNums else id
+      let keyvals = maybe mempty ordering $ L.lookup key $ t ^. keyVals
       in (\v -> mkVal <$> lookup' (path <> [(key,v)]) t) <$> keyvals
     multivalRows (key:kseq) path =
-      let keyvals = ordering $ fromMaybe [] $ L.lookup key $ t ^. keyVals
-          ordering = if sortKeyVals cfg then sortWithNums else id
+      let keyvals = maybe mempty ordering $ L.lookup key $ t ^. keyVals
       in concatMap (\v -> multivalRows kseq (path <> [(key,v)])) keyvals

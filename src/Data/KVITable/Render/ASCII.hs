@@ -150,7 +150,7 @@ hdrstep cfg t (key:keys) =
 hdrvalstep :: PP.Pretty v => RenderConfig -> KVITable v -> KeySpec -> [Key] -> [HeaderLine]
 hdrvalstep _ _ _ [] = error "ASCII hdrvalstep with empty keys after matching colStackAt -- impossible"
 hdrvalstep cfg t steppath (key:[]) =
-  let titles = ordering $ fromMaybe [] $ L.lookup key $ t ^. keyVals
+  let titles = maybe mempty ordering $ L.lookup key $ t ^. keyVals
       ordering = if sortKeyVals cfg then sortWithNums else id
       cvalWidths kv = fmap (length . show . PP.pretty . snd) $
                       L.filter ((L.isSuffixOf (steppath <> [(key, kv)])) . fst) $
@@ -165,7 +165,7 @@ hdrvalstep cfg t steppath (key:[]) =
                 else cwidths
   in [ HdrLine (fmtLine $ fmtcols) (TxtVal <$> titles) key ]
 hdrvalstep cfg t steppath (key:keys) =
-  let vals = ordering $ fromMaybe [] $ L.lookup key $ t ^. keyVals
+  let vals = maybe mempty ordering $ L.lookup key $ t ^. keyVals
       ordering = if sortKeyVals cfg then sortWithNums else id
       subhdrsV v = hdrvalstep cfg t (steppath <> [(key,v)]) keys
       subTtlHdrs = let subAtVal v = (T.length v, subhdrsV v)
@@ -207,6 +207,7 @@ hdrvalstep cfg t steppath (key:keys) =
 renderSeq :: PP.Pretty v => RenderConfig -> FmtLine -> [Key] -> KVITable v -> [Text]
 renderSeq cfg fmt keys kvitbl = fmtRender fmt . snd <$> asciiRows keys []
   where
+    ordering = if sortKeyVals cfg then sortWithNums else id
     asciiRows :: [Key] -> KeySpec -> [ (Bool, [FmtVal]) ]
     asciiRows [] path =
       let v = lookup path kvitbl
@@ -237,16 +238,13 @@ renderSeq cfg fmt keys kvitbl = fmtRender fmt . snd <$> asciiRows keys []
                                             foldl leftAdd ([],keyval) $ subrows keyval)
             leftAdd (acc,kv) (b,subrow) = (acc <> [ (b, TxtVal kv : subrow) ],
                                            if rowRepeat cfg then kv else "")
-            ordering = if sortKeyVals cfg then sortWithNums else id
         in foldl addSubrows [] $ ordering $ fromMaybe [] $ L.lookup key $ kvitbl ^. keyVals
     multivalRows :: [Key] -> KeySpec -> [ Maybe Text ]
     multivalRows (key:[]) path =
-      let ordering = if sortKeyVals cfg then sortWithNums else id
-          keyvals = ordering $ fromMaybe [] $ L.lookup key $ kvitbl ^. keyVals
+      let keyvals = maybe mempty ordering $ L.lookup key $ kvitbl ^. keyVals
           showEnt = T.pack . show . PP.pretty
       in (\v -> (showEnt <$> (lookup (path <> [(key,v)]) kvitbl))) <$> keyvals
     multivalRows (key:kseq) path =
-      let ordering = if sortKeyVals cfg then sortWithNums else id
-          keyvals = ordering $ fromMaybe [] $ L.lookup key  $ kvitbl ^. keyVals
+      let keyvals = maybe mempty ordering $ L.lookup key  $ kvitbl ^. keyVals
       in concatMap (\v -> multivalRows kseq (path <> [(key,v)])) keyvals
     multivalRows [] _ = error "multivalRows cannot be called with no keys!"
