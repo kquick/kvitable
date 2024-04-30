@@ -136,6 +136,45 @@ testHTMLRendering =
                          }) nestedTable)
       [sq_f|examples/hundreds_all.md|]
 
+        -- duplication of the above in test/evenodd.md
+    , testCase "nested table hide=none, fitted, colstack=hundreds" $
+      do
+       cmpTables "nested table hide=none, fitted, colstack=hundreds"
+        (KTRH.render (cfg0 { KTR.sortKeyVals   = True
+                           , KTR.rowRepeat     = False
+                           , KTR.hideBlankCols = False
+                           , KTR.hideBlankRows = False
+                           , KTR.equisizedCols = False
+                           , KTR.colStackAt    = Just "hundreds"
+                           }) nestedTable)
+        [sq_f|test/evenodd.md|]
+
+    , testCase "nested table hide=none, fitted, colstack=hundreds, maxCells=60" $
+      do
+       cmpTables "nested table hide=none, fitted, colstack=hundreds, maxCells=60"
+        (KTRH.render (cfg0 { KTR.sortKeyVals   = True
+                         , KTR.rowRepeat     = False
+                         , KTR.hideBlankCols = False
+                         , KTR.hideBlankRows = False
+                         , KTR.equisizedCols = False
+                         , KTR.colStackAt    = Just "hundreds"
+                         , KTR.maxCells      = 60
+                         }) nestedTable)
+        [sq2_f|test/evenodd.md|]
+
+    , testCase "nested table hide=none, fitted, no colstack, maxCells=60" $
+      do
+       cmpTables "nested table hide=none, fitted, no colstack, maxCells=60"
+        (KTRH.render (cfg0 { KTR.sortKeyVals   = True
+                         , KTR.rowRepeat     = False
+                         , KTR.hideBlankCols = False
+                         , KTR.hideBlankRows = False
+                         , KTR.equisizedCols = False
+                         , KTR.colStackAt    = Nothing
+                         , KTR.maxCells      = 60
+                         }) nestedTable)
+        [sq3_f|test/evenodd.md|]
+
     , testCase "nested table hideBlank=rol,col colstack=thousands" $
       cmpTables "nested table hideBlank=row,col colstack=thousands"
         (KTRH.render (cfg0 { KTR.sortKeyVals = True

@@ -37,10 +37,8 @@ import           Prelude hiding ( lookup )
 
 render :: PP.Pretty v => RenderConfig -> KVITable v -> Text
 render cfg t =
-  let kseq = fst <$> t ^. keyVals
-      kmap = if sortKeyVals cfg
-             then fmap sortWithNums <$> t ^. keyVals
-             else t ^. keyVals
+  let kmap = renderingKeyVals cfg $ t ^. keyVals
+      kseq = fst <$> t ^. keyVals
       (fmt, hdr) = renderHdrs cfg t kmap kseq
       bdy = renderSeq cfg fmt kmap kseq t
   in T.unlines $ hdr <> bdy

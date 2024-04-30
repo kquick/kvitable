@@ -1,9 +1,13 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Data.KVITable.Render.Internal where
 
 import qualified Data.List as L
 import qualified Data.Text as T
 
 import           Data.KVITable
+import           Data.KVITable.Internal.Helpers
+import           Data.KVITable.Render
 
 
 -- | Given some KeyVals, sort them if the configuration indicates they should be
@@ -34,3 +38,75 @@ sortWithNums kvs =
                then T.length e
                else 0
   in snd <$> L.sort skvs
+
+
+-- TODO: to allow for hideBlankCols, the KVITable should keep track of what the
+-- pre-declared vals for each key are v.s. what additional vals may be set by
+-- setting a value in that region.  Then there is enough information here
+-- (without re-scanning the table) to properly compute the keyvals that should be
+-- displayed (which would also mean that the hideCols/hideRows determinations in
+-- the rendering functions below are no longer needed.
+
+renderingKeyVals :: RenderConfig -> KeyVals -> KeyVals
+renderingKeyVals cfg inpKvs =
+  case colStackAt cfg of
+    Nothing ->
+      -- width is just keys, height is combination of keys and values
+      let maxNumKeys = maxCells cfg
+          origNumKeys = toEnum $ length kvs
+          okKvs = if origNumKeys > maxNumKeys
+                  then snoc (take (fromEnum maxNumKeys) kvs)
+                       (T.pack
+                        $ "{+ " <> show (origNumKeys - maxNumKeys) <> " MORE}"
+                       , mempty
+                       )
+                  else kvs
+      in snd $ trimStacked True 1 maxNumKeys okKvs
+    Just c ->
+      let maxNumCols = maxCells cfg
+          (kvsRows, kvsCols) = span ((c /=) . fst) kvs
+          numRegularColKvs = let v = length kvs - length kvsCols
+                             in if v < 0 then error "BAD1" else toEnum v
+          numStackedCols = countStacked kvsCols
+          origNumCols = numRegularColKvs + numStackedCols
+          allowedNumCols = if numRegularColKvs > maxNumCols
+                           then 1
+                           else maxNumCols - numRegularColKvs
+          okKvsCols = if origNumCols > maxNumCols
+                      then if numStackedCols <= maxNumCols
+                           then kvsCols
+                           else snd $ trimStacked False 1 allowedNumCols kvsCols
+                      else kvsCols
+          allowedNumRows = if maxNumCols < numStackedCols
+                           then 1
+                           else maxNumCols - numStackedCols
+          okKvsRows = snd $ trimStacked False numStackedCols allowedNumRows kvsRows
+      in okKvsRows <> okKvsCols
+
+  where
+
+    -- subtracting Naturals must be done carefully to not allow the result to be
+    -- < 0; a post-subtraction max is not enough to protect against the initial
+    -- value.
+    subOrDef d a b = if a < b then d else a - b
+
+    kvs = if sortKeyVals cfg
+          then fmap sortWithNums <$> inpKvs
+          else inpKvs
+    countStacked = \case -- does not allow for hiddenCols
+      [] -> 1
+      ((_,vs):r) -> toEnum (length vs) * countStacked r
+    trimStacked _ each n [] = ((n,each), [])
+    trimStacked _mulSubs each n ((k,vs):[]) =
+      let lvs = toEnum $ length vs
+          mvs = foldl (\a b -> if b * each < n then b else a) 1 $ [0..lvs]
+          tvs = snoc (take (fromEnum mvs) vs) $ T.pack $ "{+" <> show (lvs - mvs) <> "}"
+          rvs = if mvs < lvs then tvs else vs
+      in ((subOrDef 0 n mvs, mvs * each), [(k,rvs)])
+    trimStacked mulSubs each n ((k,vs):rkvs) =
+      let lvs = toEnum $ length vs
+          ((n',w), kvs') = trimStacked mulSubs each n rkvs
+          mvs = foldl (\a b -> if b * w < n then b else a) 1 $ [0..lvs]
+          tvs = snoc (take (fromEnum mvs) vs) $ T.pack $ "{+" <> show (lvs - mvs) <> "}"
+          rvs = if mvs < lvs then tvs else vs
+      in ((subOrDef 0 n' mvs, mvs * w), (k,rvs):kvs')
