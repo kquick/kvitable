@@ -42,6 +42,8 @@ import           Data.Text ( Text )
 import qualified GHC.Exts
 import           Lens.Micro ( Lens' )
 
+import           Data.KVITable.Internal.Helpers
+
 
 -- | The core KeyValue Indexed Table.  This table is similar to a Map,
 -- but the values are indexed by a list of Key+Value combinations, and
@@ -153,19 +155,19 @@ toList :: KVITable v -> [ GHC.Exts.Item (KVITable v) ]
 toList = GHC.Exts.toList
 
 
--- | Fetch or set the keyvals list via lenses. Note that setting the
--- keyval list will drop any current contents in the table that do not
--- have entries in the keyvals list.
+-- | Fetch or set the keyvals list via lenses. Note that setting the keyval list
+-- will drop any current contents in the table that do not have entries in the
+-- keyvals list; existing entries in the table under the old keys are NOT
+-- migrated to the new table entries.
 
 keyVals :: Lens' (KVITable v) KeyVals
 keyVals f t = (\kvs ->
                  t { keyvals = kvs
                    , contents =
-                     let inKVS spec _ = inkv spec kvs
-                         inkv [] [] = True
-                         inkv ((sk,sv):srs) ((k,vs):kv)
-                           | sk == k && sv `elem` vs = inkv srs kv
-                         inkv _ _ = False
+                     let inKVS spec _val =
+                           length kvs == length spec
+                           && and (keymatch <$> zip spec kvs)
+                         keymatch ((sk,sv), (k,vs)) = sk == k && sv `elem` vs
                      in Map.filterWithKey inKVS (contents t)
                    }
               ) <$> f (keyvals t)
@@ -208,10 +210,12 @@ lookup keyspec t = case Map.lookup keyspec $ contents t of
 normalizeKeySpec :: KVITable v -> KeySpec -> KeySpec
 normalizeKeySpec t keyspec =
   let keyandval s (k,vs) = case L.lookup k keyspec of
-        Just v -> if v `elem` vs then s <> [(k,v)]
-                  else s -- no level added, so this should never match in the Map
-        Nothing -> s <> [(k, keyvalGen t k)]
-  in foldl keyandval [] (keyvals t)
+        Just v ->
+          if v `elem` vs then snoc s (k,v)
+          else s -- no level added, so this should never match in the Map
+        Nothing -> snoc s (k, keyvalGen t k)
+  in foldl keyandval mempty (keyvals t)
+
 
 -- | Like 'lookup', but assumes a normalized key (all key elements specified, and
 -- in the proper order).  Faster than 'lookup', but will return false negatives
@@ -244,7 +248,7 @@ insert = insertWith const
 -- insertion operation.
 
 insertWith :: (v -> v -> v) -> KeySpec -> v -> KVITable v -> KVITable v
-insertWith f keyspec val t = endsetWith f t val (keyvals t) keyspec [] []
+insertWith f keyspec val t = endsetWith f t val (keyvals t) keyspec mempty mempty
 
 remainingKeyValDefaults :: KVITable v -> [(Key,a)] -> KeySpec
 remainingKeyValDefaults t = fmap (\(k,_) -> (k, keyvalGen t k))
@@ -273,7 +277,7 @@ endsetWith f t val [] spec tspec kvbld =
   -- default values for the new keys in their keyspec.
   let spec' = tspec <> spec
       keySpecElemToKeyVals (k,v) = (k, if null curTblList
-                                       then [v]
+                                       then single v
                                        else [v, keyvalGen t k])
       keyvals' = kvbld <> (keySpecElemToKeyVals <$> spec)
       curTblList = Map.toList $ contents t
@@ -286,23 +290,23 @@ endsetWith f t val [] spec tspec kvbld =
 endsetWith f t val kvs@((k,vs):rkvs) ((sk,sv):srs) tspec kvbld =
   if k == sk
   then let kv' = if sv `elem` vs
-                 then kvbld <> [(k, vs)]
-                 else kvbld <> [(k, sv : vs)]
-       in endsetWith f t val rkvs srs (tspec <> [(k,sv)]) kv'
+                 then snoc kvbld (k, vs)
+                 else snoc kvbld (k, sv : vs)
+       in endsetWith f t val rkvs srs (snoc tspec (k,sv)) kv'
   else
     -- re-arrange user spec crudely by throwing invalid
     -- candidates to the end and retrying.  This isn't
     -- necessarily efficient, but keyspecs aren't expected to be
     -- longer than about a dozen entries.
     if sk `elem` (fst <$> rkvs) && k `elem` (fst <$> srs)
-    then endsetWith f t val kvs (srs <> [(sk,sv)]) tspec kvbld
+    then endsetWith f t val kvs (snoc srs (sk,sv)) tspec kvbld
     else
       if any (`elem` (fst <$> kvs)) (fst <$> srs)
-      then endsetWith f t val kvs (srs <> [(sk,sv)]) tspec kvbld
+      then endsetWith f t val kvs (snoc srs (sk,sv)) tspec kvbld
       else
         let defVal = keyvalGen t k
             vs' = if defVal `elem` vs then vs else (defVal : vs)
-        in endsetWith f t val rkvs ((sk,sv):srs) (tspec <> [(k,defVal)]) (kvbld <> [(k,vs')])
+        in endsetWith f t val rkvs ((sk,sv):srs) (snoc tspec (k,defVal)) (snoc kvbld (k,vs'))
 
 
 -- | foldlInsert is a convenience function that can be specified
@@ -370,16 +374,16 @@ update :: (v -> Maybe v) -> KeySpec -> KVITable v -> KVITable v
 update f k t = t { contents = Map.update f (normalizeKeySpec t k) $ contents t }
 
 -- | The 'rows' function returns a set of rows for the 'KVITable' as a
--- list structure, where each list entry is a different row.  A row
+-- list structure, where each returned entry is a different row.  A row
 -- consists of the /values/ of the keys for that row followed by the
 -- value of the entry (to get the names of the keys, use 'keyVals').
 
 rows :: KVITable v -> [ ([KeyVal], v) ]
-rows t = go (keyvals t) []
+rows t = go (keyvals t) mempty
   where
     go [] spec = let spec' = reverse spec
                  in case Map.lookup spec' (contents t) of
-                      Nothing -> []
-                      Just v -> [ (snd <$> spec', v) ]
+                      Nothing -> mempty
+                      Just v -> single (snd <$> spec', v)
     go ((key, vals):kvs) spec =
       concatMap (\v -> let spec' = (key,v):spec in go kvs spec') vals

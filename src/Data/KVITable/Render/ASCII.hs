@@ -17,7 +17,7 @@ module Data.KVITable.Render.ASCII
 where
 
 import qualified Data.List as L
-import           Data.Maybe ( fromMaybe, isNothing )
+import           Data.Maybe ( isNothing )
 import           Data.Text ( Text )
 import qualified Data.Text as T
 import           Lens.Micro ( (^.) )
@@ -25,7 +25,9 @@ import qualified Prettyprinter as PP
 
 import           Data.KVITable ( KVITable, KeySpec, Key, keyVals )
 import qualified Data.KVITable as KVIT
+import           Data.KVITable.Internal.Helpers
 import           Data.KVITable.Render
+import           Data.KVITable.Render.Internal
 
 import           Prelude hiding ( lookup )
 
@@ -115,60 +117,57 @@ type Trailer = Text
 hdrFmt :: HeaderLine -> FmtLine
 hdrFmt (HdrLine fmt _ _) = fmt
 
-renderHdrs :: PP.Pretty v => RenderConfig -> KVITable v -> [Key] -> (FmtLine, [Text])
+renderHdrs :: PP.Pretty v => RenderConfig -> KVITable v -> Keys -> (FmtLine, [Text])
 renderHdrs cfg t keys =
   ( lastFmt
   , [ fmtRender fmt hdrvals
       <> (if T.null trailer then "" else (" <- " <> trailer))
     | (HdrLine fmt hdrvals trailer) <- hrows
     ] <>
-    [ fmtRender lastFmt (replicate (fmtColCnt lastFmt) Separator) ])
+    (single $ fmtRender lastFmt (replicate (fmtColCnt lastFmt) Separator)) )
   where
     hrows = hdrstep cfg t keys
     lastFmt = case reverse hrows of
-                [] -> fmtLine []
+                [] -> fmtLine mempty
                 (hrow:_) -> hdrFmt hrow
 
-hdrstep :: PP.Pretty v => RenderConfig -> KVITable v -> [Key] -> [HeaderLine]
+hdrstep :: PP.Pretty v => RenderConfig -> KVITable v -> Keys -> [HeaderLine]
 hdrstep _cfg t [] =
   -- colStackAt wasn't recognized, so devolve into a non-colstack table
   let valcoltxt = t ^. KVIT.valueColName
       valcoltsz = T.length valcoltxt
       valsizes  = length . show . PP.pretty . snd <$> KVIT.toList t
-      valwidth  = maximum $ valcoltsz : valsizes
-  in [ HdrLine (fmtLine [valwidth]) [TxtVal valcoltxt] "" ]
-hdrstep cfg t (key:keys) =
+      valwidth  = maxOf 0 $ valcoltsz : valsizes
+  in single $ HdrLine (fmtLine $ single valwidth) (single (TxtVal valcoltxt)) ""
+hdrstep cfg t ks@(key : keys) =
   if colStackAt cfg == Just key
-  then hdrvalstep cfg t [] (key:keys)  -- switch to column-stacking mode
+  then hdrvalstep cfg t mempty ks  -- switch to column-stacking mode
   else
-    let keyw = maximum ( T.length key :
-                         fmap T.length (fromMaybe [] $ L.lookup key $ t ^. keyVals) )
+    let keyw = max (T.length key)
+               $ maybe 0 (maxOf 0 . fmap T.length) (L.lookup key $ t ^. keyVals)
         mkhdr (hs, v) (HdrLine fmt hdrvals trailer) =
           ( HdrLine (fmtAddColLeft keyw fmt) (TxtVal v : hdrvals) trailer : hs , "")
-    in reverse $ fst $ foldl mkhdr ([], key) $ hdrstep cfg t keys
+    in reverse $ fst $ foldl mkhdr (mempty, key) $ hdrstep cfg t keys
          -- first line shows hdrval for non-colstack'd columns, others are blank
 
-hdrvalstep :: PP.Pretty v => RenderConfig -> KVITable v -> KeySpec -> [Key] -> [HeaderLine]
-hdrvalstep _ _ _ [] = error "ASCII hdrvalstep with empty keys after matching colStackAt -- impossible"
-hdrvalstep cfg t steppath (key:[]) =
-  let titles = maybe mempty ordering $ L.lookup key $ t ^. keyVals
-      ordering = if sortKeyVals cfg then sortWithNums else id
+hdrvalstep :: PP.Pretty v => RenderConfig -> KVITable v -> KeySpec -> Keys -> [HeaderLine]
+hdrvalstep cfg t steppath (key : []) =
+  let titles = sortedKeyVals cfg t key
       cvalWidths kv = fmap (length . show . PP.pretty . snd) $
-                      L.filter ((L.isSuffixOf (steppath <> [(key, kv)])) . fst) $
-                      KVIT.toList t
+                      filter ((L.isSuffixOf (snoc steppath (key, kv))) . fst)
+                      $ KVIT.toList t
       colWidth kv = let cvw = cvalWidths kv
-                    in if and [ hideBlankCols cfg, sum cvw == 0 ]
-                    then 0
-                    else maximum $ T.length kv : cvw
+                    in if hideBlankCols cfg && sum cvw == 0
+                       then 0
+                       else maxOf (T.length kv) cvw
       cwidths = fmap colWidth titles
       fmtcols = if equisizedCols cfg
-                then (replicate (length cwidths) (maximum cwidths))
+                then (replicate (length cwidths) (maxOf 0 cwidths))
                 else cwidths
-  in [ HdrLine (fmtLine $ fmtcols) (TxtVal <$> titles) key ]
-hdrvalstep cfg t steppath (key:keys) =
-  let vals = maybe mempty ordering $ L.lookup key $ t ^. keyVals
-      ordering = if sortKeyVals cfg then sortWithNums else id
-      subhdrsV v = hdrvalstep cfg t (steppath <> [(key,v)]) keys
+  in single $ HdrLine (fmtLine $ fmtcols) (TxtVal <$> titles) key
+hdrvalstep cfg t steppath (key : keys) =
+  let vals = sortedKeyVals cfg t key
+      subhdrsV v = hdrvalstep cfg t (snoc steppath (key,v)) keys
       subTtlHdrs = let subAtVal v = (T.length v, subhdrsV v)
                    in fmap subAtVal vals
       szexts = let subW (hl,sh) =
@@ -176,9 +175,7 @@ hdrvalstep cfg t steppath (key:keys) =
                        [] -> (0, 0)  -- should never be the case
                        (sh0:_) ->
                          let sv = fmtWidth $ hdrFmt sh0
-                         in if and [ hideBlankCols cfg,
-                                     fmtEmptyCols $ hdrFmt sh0
-                                   ]
+                         in if hideBlankCols cfg && (fmtEmptyCols $ hdrFmt sh0)
                             then (0, 0)
                             else (hl, sv)
                in fmap (uncurry max . subW) subTtlHdrs
@@ -186,7 +183,7 @@ hdrvalstep cfg t steppath (key:keys) =
                        L.transpose $
                        fmap (uncurry rsz_hdrstack) $
                        zip szhdrs $ fmap snd subTtlHdrs
-      largest = maximum szexts
+      largest = maxOf 0 szexts
       szhdrs = if equisizedCols cfg && not (hideBlankCols cfg)
                then replicate (length vals) largest
                else szexts
@@ -197,55 +194,55 @@ hdrvalstep cfg t steppath (key:keys) =
             (ew,w0) = let l = length nzCols
                       in if l == 0 then (0,0)
                          else max 0 (hw - pcw) `divMod` length nzCols
-            c' = fst $ foldl (\(c'',n) w -> (c''<>[n+w],ew)) ([],ew+w0) c
+            c' = fst $ foldl (\(c'',n) w -> (snoc c'' $ n+w, ew)) (mempty,ew+w0) c
         in HdrLine (FmtLine c' s j) v r
-      hdrJoin hl = foldl hlJoin (HdrLine (fmtLine []) [] "") hl
+      hdrJoin hl = foldl hlJoin (HdrLine (fmtLine mempty) mempty "") hl
       hlJoin (HdrLine (FmtLine c s j) v _) (HdrLine (FmtLine c' _ _) v' r) =
         HdrLine (FmtLine (c<>c') s j) (v<>v') r
-      tvals = fmap CenterVal vals
+      tvals = CenterVal <$> vals
   in HdrLine (fmtLine szhdrs) tvals key : rsz_extsubhdrs
+hdrvalstep _ _ _ [] = error "ASCII hdrvalstep with empty keys after matching colStackAt -- impossible"
 
-renderSeq :: PP.Pretty v => RenderConfig -> FmtLine -> [Key] -> KVITable v -> [Text]
-renderSeq cfg fmt keys kvitbl = fmtRender fmt . snd <$> asciiRows keys []
+renderSeq :: PP.Pretty v => RenderConfig -> FmtLine -> Keys -> KVITable v -> [Text]
+renderSeq cfg fmt keys kvitbl = fmtRender fmt . snd <$> asciiRows keys mempty
   where
-    ordering = if sortKeyVals cfg then sortWithNums else id
-    asciiRows :: [Key] -> KeySpec -> [ (Bool, [FmtVal]) ]
+    filterBlank = if hideBlankRows cfg
+                  then L.filter (not . all isNothing . snd)
+                  else id
+    asciiRows :: Keys -> KeySpec -> [ (Bool, [FmtVal]) ]
     asciiRows [] path =
       let v = KVIT.lookup' path kvitbl
           skip = case v of
                    Nothing -> hideBlankRows cfg
                    Just _  -> False
-      in if skip then []
-         else [ (False, [ maybe (TxtVal "") TxtVal (T.pack . show . PP.pretty <$> v) ]) ]
-    asciiRows (key:kseq) path
+      in if skip then mempty
+         else single $ (False, single $ maybe (TxtVal "") TxtVal (T.pack . show . PP.pretty <$> v) )
+    asciiRows ks@(key : kseq) path
       | colStackAt cfg == Just key =
-        let filterOrDefaultBlankRows =
-              fmap (fmap defaultBlanks) .
-              if hideBlankRows cfg
-              then L.filter (not . all isNothing . snd)
-              else id
+        let filterOrDefaultBlankRows = fmap (fmap defaultBlanks) . filterBlank
             defaultBlanks = fmap (\v -> maybe (TxtVal "") TxtVal v)
-        in filterOrDefaultBlankRows $ [ (False, multivalRows (key:kseq) path) ]
+        in filterOrDefaultBlankRows $ single $ (False, multivalRows ks path)
       | otherwise =
-        let subrows keyval = asciiRows kseq $ path <> [ (key, keyval) ]
+        let subrows keyval = asciiRows kseq $ snoc path (key, keyval)
             grprow = \case
               subs@(sub0:_) | key `elem` rowGroup cfg ->
-                  let subl = [ (True, replicate (length $ snd sub0) Separator) ]
+                  let subl = single (True, replicate (length $ snd sub0) Separator)
                   in if fst (last subs)
                      then init subs <> subl
                      else subs <> subl
               subs -> subs
-            addSubrows ret keyval = ret <> (grprow $ fst $
-                                            foldl leftAdd ([],keyval) $ subrows keyval)
-            leftAdd (acc,kv) (b,subrow) = (acc <> [ (b, TxtVal kv : subrow) ],
+            genSubRow keyval = grprow $ fst
+                               $ foldl leftAdd (mempty, keyval) $ subrows keyval
+            leftAdd (acc,kv) (b,subrow) = (snoc acc (b, TxtVal kv : subrow),
                                            if rowRepeat cfg then kv else "")
-        in foldl addSubrows [] $ ordering $ fromMaybe [] $ L.lookup key $ kvitbl ^. keyVals
-    multivalRows :: [Key] -> KeySpec -> [ Maybe Text ]
-    multivalRows (key:[]) path =
-      let keyvals = maybe mempty ordering $ L.lookup key $ kvitbl ^. keyVals
+        in concat (genSubRow <$> (sortedKeyVals cfg kvitbl key))
+
+    multivalRows :: Keys -> KeySpec -> [ Maybe Text ]
+    multivalRows (key : []) path =
+      let keyvals = sortedKeyVals cfg kvitbl key
           showEnt = T.pack . show . PP.pretty
-      in (\v -> (showEnt <$> (KVIT.lookup' (path <> [(key,v)]) kvitbl))) <$> keyvals
-    multivalRows (key:kseq) path =
-      let keyvals = maybe mempty ordering $ L.lookup key  $ kvitbl ^. keyVals
-      in concatMap (\v -> multivalRows kseq (path <> [(key,v)])) keyvals
+      in (\v -> (showEnt <$> (KVIT.lookup' (snoc path (key,v)) kvitbl))) <$> keyvals
+    multivalRows (key : kseq) path =
+      let keyvals = sortedKeyVals cfg kvitbl key
+      in concatMap (\v -> multivalRows kseq (snoc path (key,v))) keyvals
     multivalRows [] _ = error "multivalRows cannot be called with no keys!"

@@ -49,9 +49,11 @@ library
   GHC-options:         -Wall -Wcompat -Wincomplete-uni-patterns -Wpartial-fields -fhide-source-paths
   -- other-extensions:
   exposed-modules:     Data.KVITable
+                     , Data.KVITable.Internal.Helpers
                      , Data.KVITable.Render
                      , Data.KVITable.Render.ASCII
                      , Data.KVITable.Render.HTML
+                     , Data.KVITable.Render.Internal
   -- other-modules:
   build-depends:       base >=4.12 && <4.20
                      , containers

@@ -20,7 +20,7 @@ import qualified Data.Foldable as F
 import qualified Data.List as L
 import           Data.List.NonEmpty ( NonEmpty( (:|) ) )
 import qualified Data.List.NonEmpty as NEL
-import           Data.Maybe ( fromMaybe, isNothing )
+import           Data.Maybe ( isNothing )
 import           Data.Text ( Text )
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
@@ -29,7 +29,9 @@ import           Lucid
 import qualified Prettyprinter as PP
 
 import           Data.KVITable as KVIT
+import           Data.KVITable.Internal.Helpers
 import           Data.KVITable.Render
+import           Data.KVITable.Render.Internal
 
 import           Prelude hiding ( lookup )
 
@@ -76,22 +78,22 @@ fmtRender (FmtLine cols) mbRLabel vals = do
     let excessColCnt = length cols - length vals
         cell (w,Hdr h l v) =
           let a = [ [ class_ "kvitable_th" ]
-                  , if h == 1 then []
+                  , if h == 1 then mempty
                     else [ rowspan_ $ T.pack $ show h ]
-                  , if w == 1 then []
+                  , if w == 1 then mempty
                     else [ colspan_ $ T.pack $ show w
                          , class_ " multicol" ]
-                  , if l then [ class_ " last_in_group" ] else []
+                  , if l then [ class_ " last_in_group" ] else mempty
                   ]
           in th_ (concat $ reverse a) (div_ $ span_ $ toHtml v)
         cell (w,Val h l v) =
           let a = [ [ class_ "kvitable_td" ]
-                  , if h == 1 then []
+                  , if h == 1 then mempty
                     else [ rowspan_ $ T.pack $ show h ]
-                  , if w == 1 then []
+                  , if w == 1 then mempty
                     else [ colspan_ $ T.pack $ show w
                          , class_ " multicol" ]
-                  , if l then [ class_ " last_in_group" ] else []
+                  , if l then [ class_ " last_in_group" ] else mempty
                   ]
           in td_ (concat $ reverse a) (toHtml v)
         labelMark = toHtmlRaw ("&nbsp;&larr;" :: Text)
@@ -117,7 +119,7 @@ hdrFmt :: HeaderLine -> FmtLine
 hdrFmt (HdrLine fmt _ _) = fmt
 
 renderHdrs :: PP.Pretty v
-           => RenderConfig -> KVITable v -> [Key]
+           => RenderConfig -> KVITable v -> Keys
            -> ( FmtLine, Html () )
 renderHdrs cfg t keys = ( rowfmt, sequence_ hdrs )
   where
@@ -126,15 +128,15 @@ renderHdrs cfg t keys = ( rowfmt, sequence_ hdrs )
     renderHdr (HdrLine fmt hdrvals trailer) = fmtRender fmt trailer hdrvals
 
 hdrstep :: PP.Pretty v
-        => RenderConfig -> KVITable v -> [Key]
+        => RenderConfig -> KVITable v -> Keys
         -> (NEL.NonEmpty HeaderLine, FmtLine)
 hdrstep _cfg t [] =
-  ( HdrLine (FmtLine [1]) [Hdr 1 False $ t ^. valueColName] Nothing :| []
-  , FmtLine [1]
+  ( HdrLine (FmtLine $ single 1) (single $ Hdr 1 False $ t ^. valueColName) Nothing :| mempty
+  , FmtLine $ single 1
   )
-hdrstep cfg t (key:keys) =
+hdrstep cfg t ks@(key : keys) =
   if colStackAt cfg == Just key
-  then hdrvalstep cfg t [] (key:keys) -- switch to column stacking mode
+  then hdrvalstep cfg t mempty ks -- switch to column stacking mode
   else
     let (nexthdr0 :| nexthdrs, lowestfmt) = hdrstep cfg t keys
         (HdrLine fmt vals tr) = nexthdr0
@@ -145,29 +147,24 @@ hdrstep cfg t (key:keys) =
        )
 
 hdrvalstep :: PP.Pretty v
-           => RenderConfig -> KVITable v -> KeySpec -> [Key]
+           => RenderConfig -> KVITable v -> KeySpec -> Keys
            -> (NEL.NonEmpty HeaderLine, FmtLine)
 hdrvalstep _ _ _ [] = error "HTML hdrvalstep with empty keys after matching colStackAt -- impossible"
-hdrvalstep cfg t steppath (key:[]) =
-  let titles = ordering $ fromMaybe [] $ L.lookup key $ t ^. keyVals
-      ordering = if sortKeyVals cfg then sortWithNums else id
+hdrvalstep cfg t steppath (key : []) =
+  let titles = sortedKeyVals cfg t key
       cvalWidths kv = fmap (length . show . PP.pretty . snd) $
-                      L.filter ((L.isSuffixOf (steppath <> [(key, kv)])) . fst) $
-                      KVIT.toList t
-      cwidth c = if and [ hideBlankCols cfg
-                        , 0 == (sum $ cvalWidths c) ]
-                 then 0
-                 else 1
+                      L.filter ((L.isSuffixOf (snoc steppath (key, kv))) . fst)
+                      $ KVIT.toList t
+      cwidth c = if hideBlankCols cfg && 0 == (sum $ cvalWidths c) then 0 else 1
       fmt = FmtLine $ fmap cwidth titles
-  in ( HdrLine fmt (Hdr 1 False <$> titles) (Just key) :| [], fmt)
-hdrvalstep cfg t steppath (key:keys) =
-  let ordering = if sortKeyVals cfg then sortWithNums else id
-  in case maybe mempty ordering $ L.lookup key $ t ^. keyVals of
+  in ( HdrLine fmt (Hdr 1 False <$> titles) (Just key) :| mempty, fmt)
+hdrvalstep cfg t steppath (key : keys) =
+  case sortedKeyVals cfg t key of
        [] -> error "cannot happen"
        (ttl:ttls) ->
          let
            titles = ttl :| ttls
-           subhdrsV v = hdrvalstep cfg t (steppath <> [(key,v)]) keys
+           subhdrsV v = hdrvalstep cfg t (snoc steppath (key,v)) keys
            subTtlHdrs :: NEL.NonEmpty (NEL.NonEmpty HeaderLine, FmtLine)
            subTtlHdrs = subhdrsV <$> titles
            subhdrs :: NEL.NonEmpty (NEL.NonEmpty HeaderLine, FmtLine)
@@ -197,9 +194,9 @@ hdrvalstep cfg t steppath (key:keys) =
 ----------------------------------------------------------------------
 
 renderSeq :: PP.Pretty v
-          => RenderConfig -> FmtLine -> [Key] -> KVITable v -> Html ()
+          => RenderConfig -> FmtLine -> Keys -> KVITable v -> Html ()
 renderSeq cfg fmt keys t =
-  let lst = htmlRows keys []
+  let lst = htmlRows keys mempty
       rndr = fmtRender fmt Nothing
   in sequence_ (each rndr lst)
   where
@@ -208,54 +205,52 @@ renderSeq cfg fmt keys t =
     filterBlank = if hideBlankRows cfg
                   then L.filter (not . all isNothing)
                   else id
-    ordering = if sortKeyVals cfg then sortWithNums else id
 
     mkVal = Val 1 False . T.pack . show . PP.pretty
-    htmlRows :: [Key] -> KeySpec -> [ [FmtVal] ]
+    htmlRows :: Keys -> KeySpec -> [ [FmtVal] ]
     htmlRows [] path =
       let v = lookup' path t
           skip = case v of
             Nothing -> hideBlankRows cfg
             Just _ -> False
           row = maybe (Val 1 False "") mkVal v
-      in if skip then [] else [ [row] ]
-    htmlRows (key:kseq) path
+      in if skip then mempty else single $ single row
+    htmlRows ks@(key : kseq) path
       | colStackAt cfg == Just key =
           let filterOrDefaultBlankRows =
                 fmap (fmap (maybe (Val 1 False "") id)) . filterBlank
-          in filterOrDefaultBlankRows $
-             [ multivalRows (key:kseq) path ]
+          in filterOrDefaultBlankRows $ single $ multivalRows ks path
       | otherwise =
-          let keyvals = maybe mempty ordering $ L.lookup key $ t ^. keyVals
-              subrows keyval = htmlRows kseq $ path <> [(key,keyval)]
+          let keyvals = sortedKeyVals cfg t key
+              subrows keyval = htmlRows kseq $ snoc path (key,keyval)
 
               endOfGroup = key `elem` rowGroup cfg
               genSubrows keyval =
                 let sr = subrows keyval
                 in fst
-                   $ foldl (leftAdd (length sr)) ([],Just keyval)
+                   $ foldl (leftAdd (length sr)) (mempty, Just keyval)
                    $ reverse
-                   $ zip (endOfGroup: L.repeat False)
+                   $ zip (endOfGroup : L.repeat False)
                    $ reverse sr
               leftAdd nrows (acc,mb'kv) (endGrp, subrow) =
                 let sr = setValGrouping endGrp <$> subrow
                     setValGrouping g (Val h g' v) = Val h (g || g') v
                     setValGrouping g (Hdr h g' v) = Hdr h (g || g') v
-                in ( acc <> [ (case mb'kv of
-                                    Nothing -> sr
-                                    Just kv -> let w = if rowRepeat cfg
-                                                       then 1
-                                                       else nrows
-                                               in Hdr w endOfGroup kv : sr
-                              ) ]
+                in ( snoc acc (case mb'kv of
+                                  Nothing -> sr
+                                  Just kv -> let w = if rowRepeat cfg
+                                                     then 1
+                                                     else nrows
+                                             in Hdr w endOfGroup kv : sr
+                              )
                    , if rowRepeat cfg then mb'kv else Nothing)
           in concat $ each genSubrows keyvals
 
 
     multivalRows [] _ = error "HTML multivalRows cannot be called with no keys!"
-    multivalRows (key:[]) path =
-      let keyvals = maybe mempty ordering $ L.lookup key $ t ^. keyVals
-      in (\v -> mkVal <$> lookup' (path <> [(key,v)]) t) <$> keyvals
-    multivalRows (key:kseq) path =
-      let keyvals = maybe mempty ordering $ L.lookup key $ t ^. keyVals
-      in concatMap (\v -> multivalRows kseq (path <> [(key,v)])) keyvals
+    multivalRows (key : []) path =
+      let keyvals = sortedKeyVals cfg t key
+      in (\v -> mkVal <$> lookup' (snoc path (key,v)) t) <$> keyvals
+    multivalRows (key : kseq) path =
+      let keyvals = sortedKeyVals cfg t key
+      in concatMap (\v -> multivalRows kseq (snoc path (key,v))) keyvals
