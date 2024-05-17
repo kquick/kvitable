@@ -18,10 +18,42 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     html-parse-src = { flake = false; url = github:bgamari/html-parse; };
+    named-text = {
+      url = "github:kquick/named-text";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.levers.follows = "levers";
+      inputs.sayable.follows = "sayable";
+      # inputs.parameterized-utils-src.follows = "parameterized-utils-src";
+      # inputs.tasty-checklist.follows = "tasty-checklist";
+      # inputs.hedgehog-src.follows = "hedgehog-src";
+      # inputs.hedgehog-classes-src.follows = "hedgehog-classes-src";
+      # inputs.tasty-hedgehog-src.follows = "tasty-hedgehog-src";
+    };
+    named-text8 = {
+      url = "github:kquick/named-text";
+      inputs.nixpkgs.follows = "nixpkgs8";
+      inputs.levers.follows = "levers";
+      inputs.sayable.follows = "sayable8";
+      # inputs.parameterized-utils-src.follows = "parameterized-utils-src";
+      # inputs.tasty-checklist.follows = "tasty-checklist";
+      # inputs.hedgehog-src.follows = "hedgehog-src";
+      # inputs.hedgehog-classes-src.follows = "hedgehog-classes-src";
+      # inputs.tasty-hedgehog-src.follows = "tasty-hedgehog-src";
+    };
+    sayable = {
+      url = "github:kquick/sayable/9c76cc5";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.levers.follows = "levers";
+    };
+    sayable8 = {
+      url = "github:kquick/sayable/9c76cc5";
+      inputs.nixpkgs.follows = "nixpkgs8";
+      inputs.levers.follows = "levers";
+    };
   };
 
   outputs = { self, nixpkgs, nixpkgs8, levers
-            , html-parse-src
+            , html-parse-src, named-text, named-text8, sayable, sayable8
             }: rec
       {
         devShells = levers.eachSystem (s:
@@ -58,19 +90,38 @@
             DOC = wrap "kvitable-DOC" [ kvitable-doc ];
 
             kvitable = mkHaskell "kvitable" self {
-              inherit html-parse;
-              adjustDrv = args: haskellAdj;
+              inherit html-parse named-text;
+              adjustDrv = args: drv:
+                let ghcv = args.ghcver or "ghc8104";
+                    drv2 = haskellAdj drv;
+                in if builtins.compareVersions pkgs.haskell.compiler."${ghcv}".version "9.0" < 0
+                   then drv2.overrideAttrs (oldAttrs: {
+                     named-text = named-text8;
+                   })
+                   else drv2;
             };
             kvitable-test = mkHaskell "kvitable-test" self {
-              inherit html-parse;
-              adjustDrv = args: drv: pkgs.haskell.lib.doCheck (haskellAdj drv);
+              inherit html-parse named-text;
+              adjustDrv = args: drv:
+                let ghcv = args.ghcver or "ghc8104";
+                    drv2 = pkgs.haskell.lib.doCheck (haskellAdj drv);
+                in if builtins.compareVersions pkgs.haskell.compiler."${ghcv}".version "9.0" < 0
+                   then drv2.overrideAttrs (oldAttrs: {
+                     named-text = named-text8;
+                   })
+                   else drv2;
             };
             kvitable-doc = mkHaskell "kvitable-doc" self {
-              inherit html-parse;
+              inherit html-parse named-text;
               adjustDrv = args: drv:
-                with pkgs.haskell.lib; dontCheck (dontBenchmark drv);
+                let ghcv = args.ghcver or "ghc8104";
+                    drv2 = with pkgs.haskell.lib; dontCheck (dontBenchmark drv);
+                in if builtins.compareVersions pkgs.haskell.compiler."${ghcv}".version "9.0" < 0
+                   then drv2.overrideAttrs (oldAttrs: {
+                     named-text = named-text8;
+                   })
+                   else drv2;
             };
-
             html-parse = mkHaskell "html-parse" html-parse-src {
               adjustDrv = args: drv:
                 let ghcv = args.ghcver or "ghc8104"; in
