@@ -122,11 +122,10 @@
         "tasty-hedgehog-src": "tasty-hedgehog-src"
       },
       "locked": {
-        "lastModified": 1715907874,
-        "narHash": "sha256-Xom0+u+oLuiJaCeVDPixhATdsAdk7+QVKZZn/s80UF8=",
+        "lastModified": 1715921619,
         "owner": "kquick",
         "repo": "named-text",
-        "rev": "c123d0d594e1fe6a747a8c5be4cad274eae6b243",
+        "rev": "10ee0ec576ef61d4f15f111d03430e356a381e85",
         "type": "github"
       },
       "original": {
