@@ -1,9 +1,11 @@
+{-# LANGUAGE DataKinds #-}
+
 module Data.KVITable.Internal.Helpers where
 
-import Data.Text ( Text )
+import Data.Name ( Name )
 
 
-type Keys = [Text]  -- Really [Keys], but Keys isn't defined yet
+type Keys = [Name "Key"]
 
 
 single :: e -> [e]

@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies #-}
 
@@ -39,6 +40,7 @@ import           Data.Function ( on )
 import qualified Data.List as L
 import qualified Data.Map as Map
 import           Data.Text ( Text )
+import Data.Name
 import qualified GHC.Exts
 import           Lens.Micro ( Lens' )
 
@@ -83,7 +85,7 @@ instance Show v => Show (KVITable v) where
 
 -- | The 'Key' is the first half of a tuple that makes up the list of
 -- keys (the 'KeySpec').  The second half is the 'KeyVal'.
-type Key = Text
+type Key = Name "Key"
 
 -- | The 'KeyVal' is the first half of a tuple that makes up the list of
 -- keys (the 'KeySpec').  The first half is the 'Key'.

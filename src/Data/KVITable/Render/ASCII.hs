@@ -18,6 +18,7 @@ where
 
 import qualified Data.List as L
 import           Data.Maybe ( isNothing )
+import           Data.Name
 import           Data.Text ( Text )
 import qualified Data.Text as T
 import           Lens.Micro ( (^.) )
@@ -144,10 +145,10 @@ hdrstep cfg t kmap ks@(key : keys) =
   if colStackAt cfg == Just key
   then hdrvalstep cfg t kmap mempty ks  -- switch to column-stacking mode
   else
-    let keyw = max (T.length key)
+    let keyw = max (fromEnum $ nameLength key)
                $ maybe 0 (maxOf 0 . fmap T.length) (L.lookup key $ t ^. keyVals)
         mkhdr (hs, v) (HdrLine fmt hdrvals trailer) =
-          ( HdrLine (fmtAddColLeft keyw fmt) (TxtVal v : hdrvals) trailer : hs , "")
+          ( HdrLine (fmtAddColLeft keyw fmt) (TxtVal (nameText v) : hdrvals) trailer : hs , "")
     in reverse $ fst $ foldl mkhdr (mempty, key) $ hdrstep cfg t kmap keys
          -- first line shows hdrval for non-colstack'd columns, others are blank
 
@@ -165,7 +166,7 @@ hdrvalstep cfg t kmap steppath (key : []) =
       fmtcols = if equisizedCols cfg
                 then (replicate (length cwidths) (maxOf 0 cwidths))
                 else cwidths
-  in single $ HdrLine (fmtLine $ fmtcols) (TxtVal <$> titles) key
+  in single $ HdrLine (fmtLine $ fmtcols) (TxtVal <$> titles) (nameText key)
 hdrvalstep cfg t kmap steppath (key : keys) =
   let vals = sortedKeyVals kmap key
       subhdrsV v = hdrvalstep cfg t kmap (snoc steppath (key,v)) keys
@@ -201,7 +202,7 @@ hdrvalstep cfg t kmap steppath (key : keys) =
       hlJoin (HdrLine (FmtLine c s j) v _) (HdrLine (FmtLine c' _ _) v' r) =
         HdrLine (FmtLine (c<>c') s j) (v<>v') r
       tvals = CenterVal <$> vals
-  in HdrLine (fmtLine szhdrs) tvals key : rsz_extsubhdrs
+  in HdrLine (fmtLine szhdrs) tvals (nameText key) : rsz_extsubhdrs
 hdrvalstep _ _ _ _ [] = error "ASCII hdrvalstep with empty keys after matching colStackAt -- impossible"
 
 renderSeq :: PP.Pretty v => RenderConfig -> FmtLine -> KeyVals -> Keys -> KVITable v -> [Text]

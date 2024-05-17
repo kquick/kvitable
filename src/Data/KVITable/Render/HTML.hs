@@ -25,7 +25,8 @@ import qualified Data.List as L
 import           Data.List.NonEmpty ( NonEmpty( (:|) ) )
 import qualified Data.List.NonEmpty as NEL
 import           Data.Maybe ( isNothing )
-import           Data.Name ( Named, HTMLStyle, UTF8, convertStyle, nameText )
+import           Data.Name ( Named, HTMLStyle, UTF8, convertStyle
+                           , fromText, nameText )
 import           Data.Text ( Text )
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
@@ -79,7 +80,7 @@ fmtAddColLeft :: Int -> FmtLine -> FmtLine
 fmtAddColLeft lspan (FmtLine col) = FmtLine $ lspan : col
 
 data FmtVal = Val Height LastInGroup Text
-            | Hdr Height LastInGroup Text
+            | Hdr Height LastInGroup (Named HTMLStyle "Key")
             deriving Show
 type Height = Int
 type LastInGroup = Bool
@@ -144,9 +145,10 @@ hdrstep :: PP.Pretty v
         => RenderConfig -> KVITable v -> KeyVals -> Keys
         -> (NEL.NonEmpty HeaderLine, FmtLine)
 hdrstep _cfg t _kmap [] =
-  ( HdrLine (FmtLine $ single 1) (single $ Hdr 1 False $ t ^. valueColName) Nothing :| mempty
-  , FmtLine $ single 1
-  )
+  let hdr = Hdr 1 False $ fromText $ t ^. valueColName
+  in ( HdrLine (FmtLine $ single 1) (single hdr) Nothing :| mempty
+     , FmtLine $ single 1
+     )
 hdrstep cfg t kmap ks@(key : keys) =
   if colStackAt cfg == Just key
   then hdrvalstep cfg t kmap mempty ks -- switch to column stacking mode
@@ -154,7 +156,7 @@ hdrstep cfg t kmap ks@(key : keys) =
     let (nexthdr0 :| nexthdrs, lowestfmt) = hdrstep cfg t kmap keys
         (HdrLine fmt vals tr) = nexthdr0
         fmt' = fmtAddColLeft 1 fmt
-        val = Hdr (length nexthdrs + 1) False key
+        val = Hdr (length nexthdrs + 1) False $ convertStyle key
     in ( (HdrLine fmt' (val : vals) tr) :| nexthdrs
        , fmtAddColLeft 1 lowestfmt
        )
@@ -169,8 +171,9 @@ hdrvalstep cfg t kmap steppath (key : []) =
                       L.filter ((L.isSuffixOf (snoc steppath (key, kv))) . fst)
                       $ KVIT.toList t
       cwidth c = if hideBlankCols cfg && 0 == (sum $ cvalWidths c) then 0 else 1
-      fmt = FmtLine $ fmap cwidth titles
-  in ( HdrLine fmt (Hdr 1 False <$> titles) (Just key) :| mempty, fmt)
+      fmt = FmtLine (cwidth <$> titles)
+      hdr = Hdr 1 False . convertStyle @UTF8 @HTMLStyle . fromText <$> titles
+  in ( HdrLine fmt hdr (Just $ nameText key) :| mempty, fmt)
 hdrvalstep cfg t kmap steppath (key : keys) =
   case sortedKeyVals kmap key of
        [] -> error "cannot happen"
@@ -201,7 +204,10 @@ hdrvalstep cfg t kmap steppath (key : keys) =
                              then 0
                              else length $ L.filter (/= 0) subcols
            topfmt = FmtLine $ NEL.toList (superFmt <$> subhdrs)
-           tophdr = HdrLine topfmt (NEL.toList (Hdr 1 False <$> titles)) $ Just key
+           tophdr = let h = Hdr 1 False
+                            . convertStyle @UTF8 @HTMLStyle . fromText
+                            <$> titles
+                    in HdrLine topfmt (NEL.toList h) $ Just $ nameText key
          in ( NEL.cons tophdr subhdr_rollup, F.fold (snd <$> subTtlHdrs))
 
 ----------------------------------------------------------------------
@@ -240,8 +246,9 @@ renderSeq cfg fmt kmap keys t =
               endOfGroup = key `elem` rowGroup cfg
               genSubrows keyval =
                 let sr = subrows keyval
+                    kv = fromText keyval
                 in fst
-                   $ foldl (leftAdd (length sr)) (mempty, Just keyval)
+                   $ foldl (leftAdd (length sr)) (mempty, Just kv)
                    $ reverse
                    $ zip (endOfGroup : L.repeat False)
                    $ reverse sr

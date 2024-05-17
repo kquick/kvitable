@@ -3,6 +3,7 @@
 module Data.KVITable.Render.Internal where
 
 import qualified Data.List as L
+import           Data.String ( fromString )
 import qualified Data.Text as T
 
 import           Data.KVITable
@@ -56,7 +57,7 @@ renderingKeyVals cfg inpKvs =
           origNumKeys = toEnum $ length kvs
           okKvs = if origNumKeys > maxNumKeys
                   then snoc (take (fromEnum maxNumKeys) kvs)
-                       (T.pack
+                       (fromString
                         $ "{+ " <> show (origNumKeys - maxNumKeys) <> " MORE}"
                        , mempty
                        )
