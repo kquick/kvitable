@@ -1,6 +1,6 @@
 cabal-version:       >=1.10
 name:                kvitable
-version:             1.0.3.0
+version:             1.0.3.0.99
 synopsis:            Key/Value Indexed Table container and formatting library
 description:
    .
