@@ -59,6 +59,7 @@ library
                      , containers
                      , lucid  >= 2.9 && < 2.12
                      , microlens >= 0.4 && < 0.5
+                     , named-text >= 1.1.4.0.99 && < 1.2
                      , prettyprinter >= 1.7 && < 1.8
                      , text
 

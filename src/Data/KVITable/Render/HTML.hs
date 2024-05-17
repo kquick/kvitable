@@ -1,6 +1,10 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 -- | This module provides the 'KVITable' 'render' function for
 -- rendering the table in a HTML table format.  The various HTML table
@@ -21,6 +25,7 @@ import qualified Data.List as L
 import           Data.List.NonEmpty ( NonEmpty( (:|) ) )
 import qualified Data.List.NonEmpty as NEL
 import           Data.Maybe ( isNothing )
+import           Data.Name ( Named, HTMLStyle, UTF8, convertStyle, nameText )
 import           Data.Text ( Text )
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
@@ -49,9 +54,16 @@ render cfg t =
       bdy = renderSeq cfg fmt kmap kseq t
   in TL.toStrict $ renderText $
      table_ [ class_ "kvitable" ] $
-     do maybe mempty (caption_ . toHtml) $ Data.KVITable.Render.caption cfg
+     do maybe mempty (caption_ . toHtml . convertStyle @UTF8 @HTMLStyle)
+          $ Data.KVITable.Render.caption cfg
         thead_ [ class_ "kvitable_head" ] hdr
         tbody_ [ class_ "kvitable_body" ] bdy
+
+
+instance ToHtml (Named HTMLStyle nameOf) where
+  toHtml = toHtmlRaw . nameText
+  -- Note: toHtml uses toHtmlRaw because Named HTMLStyle is already escaped
+  toHtmlRaw = toHtmlRaw . nameText
 
 ----------------------------------------------------------------------
 

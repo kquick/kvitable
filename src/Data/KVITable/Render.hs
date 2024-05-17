@@ -1,3 +1,5 @@
+{-# LANGUAGE DataKinds #-}
+
 -- | Common definitions (and support functions) for rendering a
 -- 'KVITable'.
 
@@ -8,7 +10,7 @@ module Data.KVITable.Render
   )
 where
 
-import Data.Text ( Text )
+import Data.Name ( Name )
 import Numeric.Natural
 
 import Data.KVITable
@@ -68,7 +70,7 @@ data RenderConfig = RenderConfig
     -- ^ List of Key names that should by grouped by inserting
     -- horizontal row lines between KeyVals
 
-  , caption :: Maybe Text
+  , caption :: Maybe (Name "caption")
     -- ^ Caption to render for table for backends which support
     -- captions; otherwise ignored.
 
