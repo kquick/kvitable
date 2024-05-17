@@ -22,6 +22,7 @@ import           Data.Name
 import           Data.Text ( Text )
 import qualified Data.Text as T
 import           Lens.Micro ( (^.) )
+import           Numeric.Natural
 import qualified Prettyprinter as PP
 
 import           Data.KVITable ( KVITable, KeySpec, Key, KeyVals, keyVals )
@@ -46,10 +47,10 @@ render cfg t =
 
 ----------------------------------------------------------------------
 
-data FmtLine = FmtLine [Int] Sigils Sigils  -- last is for sepline
+data FmtLine = FmtLine [Natural] Sigils Sigils  -- last is for sepline
 data Sigils = Sigils { sep :: Text, pad :: Text, cap :: Text }
 
-fmtLine :: [Int] -> FmtLine
+fmtLine :: [Natural] -> FmtLine
 fmtLine cols = FmtLine cols
                Sigils { sep = "|", pad = " ", cap = "_" }
                Sigils { sep = "+", pad = "-", cap = "_" }
@@ -57,7 +58,7 @@ fmtLine cols = FmtLine cols
 fmtColCnt :: FmtLine -> Int
 fmtColCnt (FmtLine cols _ _) = length cols
 
-perColOvhd :: Int
+perColOvhd :: Natural
 perColOvhd = 2 -- pad chars on either side of each column's entry
 
 -- | Formatted width of output, including pad on either side of each
@@ -66,15 +67,15 @@ perColOvhd = 2 -- pad chars on either side of each column's entry
 -- Note that a column size of 0 indicates that hideBlankCols is active
 -- and the column was found to be empty of values, so it should not be
 -- counted.
-fmtWidth :: FmtLine -> Int
+fmtWidth :: FmtLine -> Natural
 fmtWidth (FmtLine cols _ _) =
   let cols' = L.filter (/= 0) cols
-  in sum cols' + ((perColOvhd + 1) * (length cols' - 1))
+  in sum cols' + ((perColOvhd + 1) * (toEnum (length cols') - 1))
 
 fmtEmptyCols :: FmtLine -> Bool
 fmtEmptyCols (FmtLine cols _ _) = sum cols == 0
 
-fmtAddColLeft :: Int -> FmtLine -> FmtLine
+fmtAddColLeft :: Natural -> FmtLine -> FmtLine
 fmtAddColLeft leftCol (FmtLine cols s s') = FmtLine (leftCol : cols) s s'
 
 data FmtVal = Separator | TxtVal Text | CenterVal Text
@@ -88,19 +89,25 @@ fmtRender (FmtLine cols sigils sepsigils) vals@(val:_) =
                        TxtVal _    -> f sigils
                        CenterVal _ -> f sigils
            l = sig sep val
+           charRepeat n c = T.pack (replicate (fromEnum n) c)
+           rightAlign n t = let tl = toEnum $ T.length t
+                                rt = charRepeat (n - tl) ' ' <> t
+                            in if tl >= n then t else rt
+           centerIn n t = let tl = toEnum $ T.length t
+                              (w,e) = (n - tl - 2) `divMod` 2
+                              m = cap sigils
+                              ls = T.replicate (fromEnum $ w + 0) m
+                              rs = T.replicate (fromEnum $ w + e) m
+                          in if tl + 2 >= n
+                             then rightAlign n t
+                             else ls <> " " <> t <> " " <> rs
        in l <>
           T.concat
           [ sig pad fld <>
             (case fld of
-                Separator   -> T.pack (replicate sz '-')
-                TxtVal v    -> T.pack (replicate (sz - T.length v) ' ') <> v
-                CenterVal t -> let (w,e) = (sz - T.length t - 2) `divMod` 2
-                                   m = cap sigils
-                                   ls = T.replicate (w + 0) m
-                                   rs = T.replicate (w + e) m
-                               in if T.length t + 2 >= sz
-                                  then (T.replicate (sz - T.length t) " ") <> t
-                                  else ls <> " " <> t <> " " <> rs
+                Separator   -> charRepeat sz '-'
+                TxtVal v    -> rightAlign sz v
+                CenterVal t -> centerIn sz t
             ) <>
             sig pad fld <>
             sig sep fld  -- KWQ or if next fld is Nothing
@@ -139,14 +146,14 @@ hdrstep _cfg t _kmap [] =
   let valcoltxt = t ^. KVIT.valueColName
       valcoltsz = T.length valcoltxt
       valsizes  = length . show . PP.pretty . snd <$> KVIT.toList t
-      valwidth  = maxOf 0 $ valcoltsz : valsizes
+      valwidth  = toEnum $ maxOf 0 $ valcoltsz : valsizes
   in single $ HdrLine (fmtLine $ single valwidth) (single (TxtVal valcoltxt)) ""
 hdrstep cfg t kmap ks@(key : keys) =
   if colStackAt cfg == Just key
   then hdrvalstep cfg t kmap mempty ks  -- switch to column-stacking mode
   else
-    let keyw = max (fromEnum $ nameLength key)
-               $ maybe 0 (maxOf 0 . fmap T.length) (L.lookup key $ t ^. keyVals)
+    let keyw = max (nameLength key)
+               $ maybe 0 (toEnum . maxOf 0 . fmap T.length) (L.lookup key $ t ^. keyVals)
         mkhdr (hs, v) (HdrLine fmt hdrvals trailer) =
           ( HdrLine (fmtAddColLeft keyw fmt) (TxtVal (nameText v) : hdrvals) trailer : hs , "")
     in reverse $ fst $ foldl mkhdr (mempty, key) $ hdrstep cfg t kmap keys
@@ -161,7 +168,7 @@ hdrvalstep cfg t kmap steppath (key : []) =
       colWidth kv = let cvw = cvalWidths kv
                     in if hideBlankCols cfg && sum cvw == 0
                        then 0
-                       else maxOf (T.length kv) cvw
+                       else toEnum $ maxOf (T.length kv) cvw
       cwidths = fmap colWidth titles
       fmtcols = if equisizedCols cfg
                 then (replicate (length cwidths) (maxOf 0 cwidths))
@@ -170,7 +177,7 @@ hdrvalstep cfg t kmap steppath (key : []) =
 hdrvalstep cfg t kmap steppath (key : keys) =
   let vals = sortedKeyVals kmap key
       subhdrsV v = hdrvalstep cfg t kmap (snoc steppath (key,v)) keys
-      subTtlHdrs = let subAtVal v = (T.length v, subhdrsV v)
+      subTtlHdrs = let subAtVal v = (toEnum $ T.length v, subhdrsV v)
                    in fmap subAtVal vals
       szexts = let subW (hl,sh) =
                      case sh of
@@ -192,10 +199,11 @@ hdrvalstep cfg t kmap steppath (key : keys) =
       rsz_hdrstack s vhs = fmap (rsz_hdrs s) vhs
       rsz_hdrs hw (HdrLine (FmtLine c s j) v r) =
         let nzCols = L.filter (/= 0) c
-            pcw = sum nzCols + ((perColOvhd + 1) * (length nzCols - 1))
+            numNZCols = toEnum (length nzCols)
+            pcw = sum nzCols + ((perColOvhd + 1) * (numNZCols - 1))
             (ew,w0) = let l = length nzCols
                       in if l == 0 then (0,0)
-                         else max 0 (hw - pcw) `divMod` length nzCols
+                         else max 0 (hw - pcw) `divMod` numNZCols
             c' = fst $ foldl (\(c'',n) w -> (snoc c'' $ n+w, ew)) (mempty,ew+w0) c
         in HdrLine (FmtLine c' s j) v r
       hdrJoin hl = foldl hlJoin (HdrLine (fmtLine mempty) mempty "") hl
