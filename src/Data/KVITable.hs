@@ -89,7 +89,7 @@ type Key = Name "Key"
 
 -- | The 'KeyVal' is the first half of a tuple that makes up the list of
 -- keys (the 'KeySpec').  The first half is the 'Key'.
-type KeyVal = Text
+type KeyVal = Name "KeyVal"
 
 -- | The 'KeySpec' is the list of tuples and defines the unique key
 -- for a value in the 'KVITable'.

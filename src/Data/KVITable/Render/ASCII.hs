@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -153,7 +154,7 @@ hdrstep cfg t kmap ks@(key : keys) =
   then hdrvalstep cfg t kmap mempty ks  -- switch to column-stacking mode
   else
     let keyw = max (nameLength key)
-               $ maybe 0 (toEnum . maxOf 0 . fmap T.length) (L.lookup key $ t ^. keyVals)
+               $ maybe 0 (maxOf 0 . fmap nameLength) (L.lookup key $ t ^. keyVals)
         mkhdr (hs, v) (HdrLine fmt hdrvals trailer) =
           ( HdrLine (fmtAddColLeft keyw fmt) (TxtVal (nameText v) : hdrvals) trailer : hs , "")
     in reverse $ fst $ foldl mkhdr (mempty, key) $ hdrstep cfg t kmap keys
@@ -162,22 +163,22 @@ hdrstep cfg t kmap ks@(key : keys) =
 hdrvalstep :: PP.Pretty v => RenderConfig -> KVITable v -> KeyVals -> KeySpec -> Keys -> [HeaderLine]
 hdrvalstep cfg t kmap steppath (key : []) =
   let titles = sortedKeyVals kmap key
-      cvalWidths kv = fmap (length . show . PP.pretty . snd) $
+      cvalWidths kv = fmap (toEnum . length . show . PP.pretty . snd) $
                       filter ((L.isSuffixOf (snoc steppath (key, kv))) . fst)
                       $ KVIT.toList t
       colWidth kv = let cvw = cvalWidths kv
                     in if hideBlankCols cfg && sum cvw == 0
                        then 0
-                       else toEnum $ maxOf (T.length kv) cvw
+                       else maxOf (nameLength kv) cvw
       cwidths = fmap colWidth titles
       fmtcols = if equisizedCols cfg
                 then (replicate (length cwidths) (maxOf 0 cwidths))
                 else cwidths
-  in single $ HdrLine (fmtLine $ fmtcols) (TxtVal <$> titles) (nameText key)
+  in single $ HdrLine (fmtLine $ fmtcols) (TxtVal . nameText <$> titles) (nameText key)
 hdrvalstep cfg t kmap steppath (key : keys) =
   let vals = sortedKeyVals kmap key
       subhdrsV v = hdrvalstep cfg t kmap (snoc steppath (key,v)) keys
-      subTtlHdrs = let subAtVal v = (toEnum $ T.length v, subhdrsV v)
+      subTtlHdrs = let subAtVal v = (nameLength v, subhdrsV v)
                    in fmap subAtVal vals
       szexts = let subW (hl,sh) =
                      case sh of
@@ -209,7 +210,7 @@ hdrvalstep cfg t kmap steppath (key : keys) =
       hdrJoin hl = foldl hlJoin (HdrLine (fmtLine mempty) mempty "") hl
       hlJoin (HdrLine (FmtLine c s j) v _) (HdrLine (FmtLine c' _ _) v' r) =
         HdrLine (FmtLine (c<>c') s j) (v<>v') r
-      tvals = CenterVal <$> vals
+      tvals = CenterVal . nameText <$> vals
   in HdrLine (fmtLine szhdrs) tvals (nameText key) : rsz_extsubhdrs
 hdrvalstep _ _ _ _ [] = error "ASCII hdrvalstep with empty keys after matching colStackAt -- impossible"
 
@@ -243,7 +244,7 @@ renderSeq cfg fmt kmap keys kvitbl = fmtRender fmt . snd <$> asciiRows keys memp
               subs -> subs
             genSubRow keyval = grprow $ fst
                                $ foldl leftAdd (mempty, keyval) $ subrows keyval
-            leftAdd (acc,kv) (b,subrow) = (snoc acc (b, TxtVal kv : subrow),
+            leftAdd (acc,kv) (b,subrow) = (snoc acc (b, TxtVal (nameText kv) : subrow),
                                            if rowRepeat cfg then kv else "")
         in concat (genSubRow <$> (sortedKeyVals kmap key))
 

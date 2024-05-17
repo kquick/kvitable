@@ -3,6 +3,7 @@
 module Data.KVITable.Render.Internal where
 
 import qualified Data.List as L
+import           Data.Name ( nullName, nameLength, nameText )
 import           Data.String ( fromString )
 import qualified Data.Text as T
 
@@ -32,11 +33,11 @@ sortedKeyVals kmap key = maybe mempty id $ L.lookup key kmap
 sortWithNums :: [KeyVal] -> [KeyVal]
 sortWithNums kvs =
   let skvs = zip (rank <$> kvs) kvs
-      rank e = if (not $ T.null e) &&
-                  or [ T.head e `elem` ['0'..'9']
-                     , T.last e `elem` ['0'..'9']
+      rank e = if (not $ nullName e) &&
+                  or [ T.head (nameText e) `elem` ['0'..'9']
+                     , T.last (nameText e) `elem` ['0'..'9']
                      ]
-               then T.length e
+               then nameLength e
                else 0
   in snd <$> L.sort skvs
 
@@ -101,18 +102,19 @@ renderingKeyVals cfg inpKvs =
           else inpKvs
     countStacked = \case -- does not allow for hiddenCols
       [] -> 1
-      ((_,vs):r) -> toEnum (length vs) * countStacked r
+      ((_,vs):r) -> toEnum (L.length vs) * countStacked r
     trimStacked _ each n [] = ((n,each), [])
     trimStacked _mulSubs each n ((k,vs):[]) =
       let lvs = toEnum $ length vs
           mvs = foldl (\a b -> if b * each < n then b else a) 1 $ [0..lvs]
-          tvs = snoc (take (fromEnum mvs) vs) $ T.pack $ "{+" <> show (lvs - mvs) <> "}"
+          tvs = snoc (take (fromEnum mvs) vs) $ excessHdr $ lvs - mvs
           rvs = if mvs < lvs then tvs else vs
       in ((subOrDef 0 n mvs, mvs * each), [(k,rvs)])
     trimStacked mulSubs each n ((k,vs):rkvs) =
       let lvs = toEnum $ length vs
           ((n',w), kvs') = trimStacked mulSubs each n rkvs
           mvs = foldl (\a b -> if b * w < n then b else a) 1 $ [0..lvs]
-          tvs = snoc (take (fromEnum mvs) vs) $ T.pack $ "{+" <> show (lvs - mvs) <> "}"
+          tvs = snoc (take (fromEnum mvs) vs) $ excessHdr $ lvs - mvs
           rvs = if mvs < lvs then tvs else vs
       in ((subOrDef 0 n' mvs, mvs * w), (k,rvs):kvs')
+    excessHdr n = fromString $ "{+" <> show n <> "}"

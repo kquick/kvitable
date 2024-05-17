@@ -3,6 +3,7 @@
 module SampleTables where
 
 import           Data.KVITable
+import           Data.String ( fromString )
 import           Data.Text ( Text )
 import qualified Data.Text as T
 import           Lens.Micro ( (^.), (.~), (%~), (&) )
@@ -195,11 +196,11 @@ nestedTable = foldl foldlInsert
                              , ("ones",      ["0"])
                              ]
               )
-              [ let keyvals = [("millions", T.pack $ show m)
-                              ,("thousands", T.pack $ show t)
-                              ,("hundreds", T.pack $ show h)
-                              ,("tens", T.pack $ show d)
-                              ,("ones", T.pack $ show o)]
+              [ let keyvals = [("millions", fromString $ show m)
+                              ,("thousands", fromString $ show t)
+                              ,("hundreds", fromString $ show h)
+                              ,("tens", fromString $ show d)
+                              ,("ones", fromString $ show o)]
                     value = if (o `rem` 2) == 1 then "odd" else "even"
                 in (keyvals, value)
               | m <- [0..2 :: Int]

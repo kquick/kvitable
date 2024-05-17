@@ -2,6 +2,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -25,8 +26,8 @@ import qualified Data.List as L
 import           Data.List.NonEmpty ( NonEmpty( (:|) ) )
 import qualified Data.List.NonEmpty as NEL
 import           Data.Maybe ( isNothing )
-import           Data.Name ( Named, HTMLStyle, UTF8, convertStyle
-                           , fromText, nameText )
+import           Data.Name ( Named, HTMLStyle, UTF8, ConvertName, convertName
+                           , convertStyle, fromText, nameText )
 import           Data.Text ( Text )
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
@@ -80,11 +81,14 @@ fmtAddColLeft :: Int -> FmtLine -> FmtLine
 fmtAddColLeft lspan (FmtLine col) = FmtLine $ lspan : col
 
 data FmtVal = Val Height LastInGroup Text
-            | Hdr Height LastInGroup (Named HTMLStyle "Key")
+            | Hdr Height LastInGroup (Named HTMLStyle "column header")
             deriving Show
 type Height = Int
 type LastInGroup = Bool
 type RightLabel = Text
+
+instance ConvertName UTF8 "Key" "column header"
+instance ConvertName UTF8 "KeyVal" "column header"
 
 fmtRender :: FmtLine -> Maybe RightLabel -> [FmtVal] -> Html ()
 fmtRender (FmtLine cols) mbRLabel vals = do
@@ -156,7 +160,7 @@ hdrstep cfg t kmap ks@(key : keys) =
     let (nexthdr0 :| nexthdrs, lowestfmt) = hdrstep cfg t kmap keys
         (HdrLine fmt vals tr) = nexthdr0
         fmt' = fmtAddColLeft 1 fmt
-        val = Hdr (length nexthdrs + 1) False $ convertStyle key
+        val = Hdr (length nexthdrs + 1) False $ convertStyle $ convertName key
     in ( (HdrLine fmt' (val : vals) tr) :| nexthdrs
        , fmtAddColLeft 1 lowestfmt
        )
@@ -172,7 +176,7 @@ hdrvalstep cfg t kmap steppath (key : []) =
                       $ KVIT.toList t
       cwidth c = if hideBlankCols cfg && 0 == (sum $ cvalWidths c) then 0 else 1
       fmt = FmtLine (cwidth <$> titles)
-      hdr = Hdr 1 False . convertStyle @UTF8 @HTMLStyle . fromText <$> titles
+      hdr = Hdr 1 False . convertStyle @UTF8 @HTMLStyle . convertName <$> titles
   in ( HdrLine fmt hdr (Just $ nameText key) :| mempty, fmt)
 hdrvalstep cfg t kmap steppath (key : keys) =
   case sortedKeyVals kmap key of
@@ -205,7 +209,7 @@ hdrvalstep cfg t kmap steppath (key : keys) =
                              else length $ L.filter (/= 0) subcols
            topfmt = FmtLine $ NEL.toList (superFmt <$> subhdrs)
            tophdr = let h = Hdr 1 False
-                            . convertStyle @UTF8 @HTMLStyle . fromText
+                            . convertStyle @UTF8 @HTMLStyle . convertName
                             <$> titles
                     in HdrLine topfmt (NEL.toList h) $ Just $ nameText key
          in ( NEL.cons tophdr subhdr_rollup, F.fold (snd <$> subTtlHdrs))
@@ -246,7 +250,7 @@ renderSeq cfg fmt kmap keys t =
               endOfGroup = key `elem` rowGroup cfg
               genSubrows keyval =
                 let sr = subrows keyval
-                    kv = fromText keyval
+                    kv = convertStyle $ convertName keyval
                 in fst
                    $ foldl (leftAdd (length sr)) (mempty, Just kv)
                    $ reverse
