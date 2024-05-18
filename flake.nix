@@ -90,7 +90,7 @@
             DOC = wrap "kvitable-DOC" [ kvitable-doc ];
 
             kvitable = mkHaskell "kvitable" self {
-              inherit html-parse named-text;
+              inherit html-parse named-text sayable;
               adjustDrv = args: drv:
                 let ghcv = args.ghcver or "ghc8104";
                     drv2 = haskellAdj drv;
@@ -101,7 +101,7 @@
                    else drv2;
             };
             kvitable-test = mkHaskell "kvitable-test" self {
-              inherit html-parse named-text;
+              inherit html-parse named-text sayable;
               adjustDrv = args: drv:
                 let ghcv = args.ghcver or "ghc8104";
                     drv2 = pkgs.haskell.lib.doCheck (haskellAdj drv);
@@ -112,7 +112,7 @@
                    else drv2;
             };
             kvitable-doc = mkHaskell "kvitable-doc" self {
-              inherit html-parse named-text;
+              inherit html-parse named-text sayable;
               adjustDrv = args: drv:
                 let ghcv = args.ghcver or "ghc8104";
                     drv2 = with pkgs.haskell.lib; dontCheck (dontBenchmark drv);
