@@ -27,7 +27,7 @@ import           Lens.Micro ( (^.) )
 import           Numeric.Natural
 import qualified Prettyprinter as PP
 
-import           Data.KVITable ( KVITable, KeySpec, Key, KeyVals, keyVals )
+import           Data.KVITable ( KVITable, KeySpec, KeyVals, keyVals )
 import qualified Data.KVITable as KVIT
 import           Data.KVITable.Internal.Helpers
 import           Data.KVITable.Render
@@ -42,9 +42,8 @@ import           Prelude hiding ( lookup )
 render :: PP.Pretty v => RenderConfig -> KVITable v -> Text
 render cfg t =
   let kmap = renderingKeyVals cfg $ t ^. keyVals
-      kseq = fst <$> t ^. keyVals
-      (fmt, hdr) = renderHdrs cfg t kmap kseq
-      bdy = renderSeq cfg fmt kmap kseq t
+      (fmt, hdr) = renderHdrs cfg t kmap
+      bdy = renderSeq cfg fmt kmap t
   in T.unlines $ hdr <> bdy
 
 ----------------------------------------------------------------------
@@ -128,8 +127,10 @@ type Trailer = Name "column header"
 hdrFmt :: HeaderLine -> FmtLine
 hdrFmt (HdrLine fmt _ _) = fmt
 
-renderHdrs :: PP.Pretty v => RenderConfig -> KVITable v -> KeyVals -> Keys -> (FmtLine, [Text])
-renderHdrs cfg t kmap keys =
+renderHdrs :: PP.Pretty v
+           => RenderConfig -> KVITable v -> (KeyVals, KeyVals)
+           -> (FmtLine, [Text])
+renderHdrs cfg t kmap =
   ( lastFmt
   , [ fmtRender fmt hdrvals
       <> (if nullName trailer then "" else (" <- " <> nameText trailer))
@@ -137,13 +138,14 @@ renderHdrs cfg t kmap keys =
     ] <>
     (single $ fmtRender lastFmt (replicate (fmtColCnt lastFmt) Separator)) )
   where
-    hrows = hdrstep cfg t kmap keys
+    hrows = hdrstep cfg t kmap
     lastFmt = case reverse hrows of
                 [] -> fmtLine mempty
                 (hrow:_) -> hdrFmt hrow
 
-hdrstep :: PP.Pretty v => RenderConfig -> KVITable v -> KeyVals -> Keys -> [HeaderLine]
-hdrstep _cfg t _kmap [] =
+hdrstep :: PP.Pretty v
+        => RenderConfig -> KVITable v -> (KeyVals, KeyVals) -> [HeaderLine]
+hdrstep _cfg t ([], []) =
   -- colStackAt wasn't recognized, so devolve into a non-colstack table
   let valcoltxt = t ^. KVIT.valueColName
       valcoltsz = nameLength valcoltxt
@@ -151,21 +153,20 @@ hdrstep _cfg t _kmap [] =
       valwidth  = maxOf 0 $ valcoltsz : valsizes
       hdrVal = TxtVal $ nameText valcoltxt
   in single $ HdrLine (fmtLine $ single valwidth) (single hdrVal) ""
-hdrstep cfg t kmap ks@(key : keys) =
-  if colStackAt cfg == Just key
-  then hdrvalstep cfg t kmap mempty ks  -- switch to column-stacking mode
-  else
-    let keyw = max (nameLength key)
-               $ maybe 0 (maxOf 0 . fmap nameLength) (L.lookup key $ t ^. keyVals)
-        mkhdr (hs, v) (HdrLine fmt hdrvals trailer) =
-          ( HdrLine (fmtAddColLeft keyw fmt) (TxtVal (nameText v) : hdrvals) trailer : hs , "")
-    in reverse $ fst $ foldl mkhdr (mempty, key) $ hdrstep cfg t kmap keys
-         -- first line shows hdrval for non-colstack'd columns, others are blank
+hdrstep cfg t ([], colKeyMap) =
+  hdrvalstep cfg t colKeyMap mempty  -- switch to column-stacking mode
+hdrstep cfg t ((key,keyvals) : keys, colKeyMap) =
+  let keyw = max (nameLength key) $ (maxOf 0 . fmap nameLength) keyvals
+      mkhdr (hs, v) (HdrLine fmt hdrvals trailer) =
+        ( HdrLine (fmtAddColLeft keyw fmt) (TxtVal (nameText v) : hdrvals) trailer : hs , "")
+  in reverse $ fst $ foldl mkhdr (mempty, key) $ hdrstep cfg t (keys, colKeyMap)
+  -- first line shows hdrval for non-colstack'd columns, others are blank
 
-hdrvalstep :: PP.Pretty v => RenderConfig -> KVITable v -> KeyVals -> KeySpec -> Keys -> [HeaderLine]
-hdrvalstep cfg t kmap steppath (key : []) =
-  let titles = sortedKeyVals kmap key
-      cvalWidths kv = fmap (toEnum . length . show . PP.pretty . snd) $
+hdrvalstep :: PP.Pretty v
+           => RenderConfig -> KVITable v -> KeyVals -> KeySpec
+           -> [HeaderLine]
+hdrvalstep cfg t ((key,titles) : []) steppath =
+  let cvalWidths kv = fmap (toEnum . length . show . PP.pretty . snd) $
                       filter ((L.isSuffixOf (snoc steppath (key, kv))) . fst)
                       $ KVIT.toList t
       colWidth kv = let cvw = cvalWidths kv
@@ -178,9 +179,8 @@ hdrvalstep cfg t kmap steppath (key : []) =
                 else cwidths
       tr = convertName key
   in single $ HdrLine (fmtLine $ fmtcols) (TxtVal . nameText <$> titles) tr
-hdrvalstep cfg t kmap steppath (key : keys) =
-  let vals = sortedKeyVals kmap key
-      subhdrsV v = hdrvalstep cfg t kmap (snoc steppath (key,v)) keys
+hdrvalstep cfg t ((key,vals) : keys) steppath =
+  let subhdrsV v = hdrvalstep cfg t keys (snoc steppath (key,v))
       subTtlHdrs = let subAtVal v = (nameLength v, subhdrsV v)
                    in fmap subAtVal vals
       szexts = let subW (hl,sh) =
@@ -215,48 +215,49 @@ hdrvalstep cfg t kmap steppath (key : keys) =
         HdrLine (FmtLine (c<>c') s j) (v<>v') r
       tvals = CenterVal . nameText <$> vals
   in HdrLine (fmtLine szhdrs) tvals (convertName key) : rsz_extsubhdrs
-hdrvalstep _ _ _ _ [] = error "ASCII hdrvalstep with empty keys after matching colStackAt -- impossible"
+hdrvalstep _ _ [] _ = error "ASCII hdrvalstep with empty keys after matching colStackAt -- impossible"
 
-renderSeq :: PP.Pretty v => RenderConfig -> FmtLine -> KeyVals -> Keys -> KVITable v -> [Text]
-renderSeq cfg fmt kmap keys kvitbl = fmtRender fmt . snd <$> asciiRows keys mempty
+----------------------------------------------------------------------
+
+renderSeq :: PP.Pretty v
+          => RenderConfig -> FmtLine -> (KeyVals, KeyVals) -> KVITable v
+          -> [Text]
+renderSeq cfg fmt kmap kvitbl = fmtRender fmt . snd <$> asciiRows kmap mempty
   where
     filterBlank = if hideBlankRows cfg
                   then L.filter (not . all isNothing . snd)
                   else id
-    asciiRows :: Keys -> KeySpec -> [ (Bool, [FmtVal]) ]
-    asciiRows [] path =
+    asciiRows :: (KeyVals, KeyVals) -> KeySpec -> [ (Bool, [FmtVal]) ]
+    asciiRows ([], []) path =
       let v = KVIT.lookup' path kvitbl
           skip = case v of
                    Nothing -> hideBlankRows cfg
                    Just _  -> False
       in if skip then mempty
          else single $ (False, single $ maybe (TxtVal "") TxtVal (T.pack . show . PP.pretty <$> v) )
-    asciiRows ks@(key : kseq) path
-      | colStackAt cfg == Just key =
-        let filterOrDefaultBlankRows = fmap (fmap defaultBlanks) . filterBlank
-            defaultBlanks = fmap (\v -> maybe (TxtVal "") TxtVal v)
-        in filterOrDefaultBlankRows $ single $ (False, multivalRows ks path)
-      | otherwise =
-        let subrows keyval = asciiRows kseq $ snoc path (key, keyval)
-            grprow = \case
-              subs@(sub0:_) | key `elem` rowGroup cfg ->
-                  let subl = single (True, replicate (length $ snd sub0) Separator)
-                  in if fst (last subs)
-                     then init subs <> subl
-                     else subs <> subl
-              subs -> subs
-            genSubRow keyval = grprow $ fst
-                               $ foldl leftAdd (mempty, keyval) $ subrows keyval
-            leftAdd (acc,kv) (b,subrow) = (snoc acc (b, TxtVal (nameText kv) : subrow),
-                                           if rowRepeat cfg then kv else "")
-        in concat (genSubRow <$> (sortedKeyVals kmap key))
+    asciiRows ([], colKeyMap) path =
+      let filterOrDefaultBlankRows = fmap (fmap defaultBlanks) . filterBlank
+          defaultBlanks = fmap (\v -> maybe (TxtVal "") TxtVal v)
+      in filterOrDefaultBlankRows $ single $ (False, multivalRows colKeyMap path)
+    asciiRows ((key, keyvals) : kseq, colKeyMap) path =
+      let subrows keyval = asciiRows (kseq, colKeyMap) $ snoc path (key, keyval)
+          grprow = \case
+            subs@(sub0:_) | key `elem` rowGroup cfg ->
+              let subl = single (True, replicate (length $ snd sub0) Separator)
+              in if fst (last subs) then init subs <> subl else subs <> subl
+            subs -> subs
+          genSubRow keyval = grprow $ fst
+                             $ foldl leftAdd (mempty, keyval) $ subrows keyval
+          leftAdd (acc,kv) (b,subrow) =
+            (snoc acc (b, TxtVal (nameText kv) : subrow)
+            , if rowRepeat cfg then kv else ""
+            )
+      in concat (genSubRow <$> keyvals)
 
-    multivalRows :: Keys -> KeySpec -> [ Maybe Text ]
-    multivalRows (key : []) path =
-      let keyvals = sortedKeyVals kmap key
-          showEnt = T.pack . show . PP.pretty
+    multivalRows :: KeyVals -> KeySpec -> [ Maybe Text ]
+    multivalRows ((key, keyvals) : []) path =
+      let showEnt = T.pack . show . PP.pretty
       in (\v -> (showEnt <$> (KVIT.lookup' (snoc path (key,v)) kvitbl))) <$> keyvals
-    multivalRows (key : kseq) path =
-      let keyvals = sortedKeyVals kmap key
-      in concatMap (\v -> multivalRows kseq (snoc path (key,v))) keyvals
+    multivalRows ((key, keyvals) : kseq) path =
+      concatMap (\v -> multivalRows kseq (snoc path (key,v))) keyvals
     multivalRows [] _ = error "multivalRows cannot be called with no keys!"

@@ -17,13 +17,6 @@ import           Data.KVITable.Internal.Helpers
 import           Data.KVITable.Render
 
 
--- | Given some KeyVals, sort them if the configuration indicates they should be
--- sorted.
-
-sortedKeyVals :: KeyVals -> Key -> [KeyVal]
-sortedKeyVals kmap key = maybe mempty id $ L.lookup key kmap
-
-
 -- | Sorting for KeyVals.  If the value starts or ends with a digit,
 -- then this should do a rough numeric sort on the expectation that
 -- the digits represent a version or some other numeric value.  As an
@@ -54,7 +47,11 @@ sortWithNums kvs =
 -- displayed (which would also mean that the hideCols/hideRows determinations in
 -- the rendering functions below are no longer needed.
 
-renderingKeyVals :: RenderConfig -> KeyVals -> KeyVals
+-- | Returns the rows and columns KeyVals, with appropriate application of
+-- RenderConfig specifications: colStackAt, maxCells, maxCols.  Does not collapse
+-- empty rows or columns.
+
+renderingKeyVals :: RenderConfig -> KeyVals -> (KeyVals, KeyVals)
 renderingKeyVals cfg inpKvs =
   case colStackAt cfg of
     Nothing ->
@@ -70,7 +67,7 @@ renderingKeyVals cfg inpKvs =
                   else kvs
           -- n.b. maxCols is not really useful here, since all but the last
           -- column are headers and values are only shown in that last column.
-      in snd $ trimStacked True 1 maxNumKeys okKvs
+      in (snd $ trimStacked True 1 maxNumKeys okKvs, [])
     Just c ->
       let maxNumCols = min (maxCells cfg) (maxCols cfg)
           (kvsRows, kvsCols) = span ((c /=) . fst) kvs
@@ -93,7 +90,7 @@ renderingKeyVals cfg inpKvs =
                            )
           eachRowCols = min maxNumCols numStackedCols
           okKvsRows = snd $ trimStacked False eachRowCols allowedNumRows kvsRows
-      in okKvsRows <> okKvsCols
+      in (okKvsRows, okKvsCols)
 
   where
 
