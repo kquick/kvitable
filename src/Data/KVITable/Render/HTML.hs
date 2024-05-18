@@ -2,7 +2,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -26,7 +25,7 @@ import qualified Data.List as L
 import           Data.List.NonEmpty ( NonEmpty( (:|) ) )
 import qualified Data.List.NonEmpty as NEL
 import           Data.Maybe ( isNothing )
-import           Data.Name ( Named, HTMLStyle, UTF8, ConvertName, convertName
+import           Data.Name ( Named, HTMLStyle, UTF8, convertName
                            , convertStyle, nameText )
 import           Data.Text ( Text )
 import qualified Data.Text as T
@@ -86,10 +85,7 @@ data FmtVal = Val Height LastInGroup Text
             deriving Show
 type Height = Natural
 type LastInGroup = Bool
-type RightLabel = Text
-
-instance ConvertName UTF8 "Key" "column header"
-instance ConvertName UTF8 "KeyVal" "column header"
+type RightLabel = Named HTMLStyle "column header"
 
 fmtRender :: FmtLine -> Maybe RightLabel -> [FmtVal] -> Html ()
 fmtRender (FmtLine cols) mbRLabel vals = do
@@ -128,7 +124,7 @@ fmtRender (FmtLine cols) mbRLabel vals = do
 
 data HeaderLine = HdrLine FmtLine HdrVals Trailer
 type HdrVals = [FmtVal]
-type Trailer = Maybe Text
+type Trailer = Maybe RightLabel
 
 instance Semigroup HeaderLine where
   (HdrLine fmt1 hv1 t1) <> (HdrLine fmt2 hv2 _) =
@@ -179,7 +175,8 @@ hdrvalstep cfg t kmap steppath (key : []) =
       cwidth c = if hideBlankCols cfg && 0 == (sum $ cvalWidths c) then 0 else 1
       fmt = FmtLine (cwidth <$> titles)
       hdr = Hdr 1 False . convertStyle @UTF8 @HTMLStyle . convertName <$> titles
-  in ( HdrLine fmt hdr (Just $ nameText key) :| mempty, fmt)
+      k = convertStyle @UTF8 @HTMLStyle $ convertName key
+  in ( HdrLine fmt hdr (Just k) :| mempty, fmt)
 hdrvalstep cfg t kmap steppath (key : keys) =
   case sortedKeyVals kmap key of
        [] -> error "cannot happen"
@@ -213,7 +210,8 @@ hdrvalstep cfg t kmap steppath (key : keys) =
            tophdr = let h = Hdr 1 False
                             . convertStyle @UTF8 @HTMLStyle . convertName
                             <$> titles
-                    in HdrLine topfmt (NEL.toList h) $ Just $ nameText key
+                        tr = convertStyle @UTF8 @HTMLStyle $ convertName key
+                    in HdrLine topfmt (NEL.toList h) $ Just tr
          in ( NEL.cons tophdr subhdr_rollup, F.fold (snd <$> subTtlHdrs))
 
 ----------------------------------------------------------------------

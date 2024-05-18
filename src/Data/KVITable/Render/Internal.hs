@@ -1,9 +1,14 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Data.KVITable.Render.Internal where
 
 import qualified Data.List as L
-import           Data.Name ( nullName, nameLength, nameText )
+import           Data.Name ( ConvertName, UTF8, nullName, nameLength, nameText )
 import           Data.String ( fromString )
 import qualified Data.Text as T
 
@@ -118,3 +123,7 @@ renderingKeyVals cfg inpKvs =
           rvs = if mvs < lvs then tvs else vs
       in ((subOrDef 0 n' mvs, mvs * w), (k,rvs):kvs')
     excessHdr n = fromString $ "{+" <> show n <> "}"
+
+
+instance ConvertName UTF8 "Key" "column header"
+instance ConvertName UTF8 "KeyVal" "column header"

@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -122,7 +123,7 @@ fmtRender (FmtLine cols sigils sepsigils) vals@(val:_) =
 
 data HeaderLine = HdrLine FmtLine HdrVals Trailer
 type HdrVals = [FmtVal]
-type Trailer = Text
+type Trailer = Name "column header"
 
 hdrFmt :: HeaderLine -> FmtLine
 hdrFmt (HdrLine fmt _ _) = fmt
@@ -131,7 +132,7 @@ renderHdrs :: PP.Pretty v => RenderConfig -> KVITable v -> KeyVals -> Keys -> (F
 renderHdrs cfg t kmap keys =
   ( lastFmt
   , [ fmtRender fmt hdrvals
-      <> (if T.null trailer then "" else (" <- " <> trailer))
+      <> (if nullName trailer then "" else (" <- " <> nameText trailer))
     | (HdrLine fmt hdrvals trailer) <- hrows
     ] <>
     (single $ fmtRender lastFmt (replicate (fmtColCnt lastFmt) Separator)) )
@@ -175,7 +176,8 @@ hdrvalstep cfg t kmap steppath (key : []) =
       fmtcols = if equisizedCols cfg
                 then (replicate (length cwidths) (maxOf 0 cwidths))
                 else cwidths
-  in single $ HdrLine (fmtLine $ fmtcols) (TxtVal . nameText <$> titles) (nameText key)
+      tr = convertName key
+  in single $ HdrLine (fmtLine $ fmtcols) (TxtVal . nameText <$> titles) tr
 hdrvalstep cfg t kmap steppath (key : keys) =
   let vals = sortedKeyVals kmap key
       subhdrsV v = hdrvalstep cfg t kmap (snoc steppath (key,v)) keys
@@ -212,7 +214,7 @@ hdrvalstep cfg t kmap steppath (key : keys) =
       hlJoin (HdrLine (FmtLine c s j) v _) (HdrLine (FmtLine c' _ _) v' r) =
         HdrLine (FmtLine (c<>c') s j) (v<>v') r
       tvals = CenterVal . nameText <$> vals
-  in HdrLine (fmtLine szhdrs) tvals (nameText key) : rsz_extsubhdrs
+  in HdrLine (fmtLine szhdrs) tvals (convertName key) : rsz_extsubhdrs
 hdrvalstep _ _ _ _ [] = error "ASCII hdrvalstep with empty keys after matching colStackAt -- impossible"
 
 renderSeq :: PP.Pretty v => RenderConfig -> FmtLine -> KeyVals -> Keys -> KVITable v -> [Text]
