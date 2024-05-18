@@ -25,7 +25,7 @@ import           Data.Text ( Text )
 import qualified Data.Text as T
 import           Lens.Micro ( (^.) )
 import           Numeric.Natural
-import qualified Prettyprinter as PP
+import           Text.Sayable
 
 import           Data.KVITable ( KVITable, KeySpec, KeyVals, keyVals )
 import qualified Data.KVITable as KVIT
@@ -39,7 +39,7 @@ import           Prelude hiding ( lookup )
 -- | Renders the specified table in ASCII format, using the specified
 -- 'RenderConfig' controls.
 
-render :: PP.Pretty v => RenderConfig -> KVITable v -> Text
+render :: Sayable "normal" v => RenderConfig -> KVITable v -> Text
 render cfg t =
   let kmap = renderingKeyVals cfg $ t ^. keyVals
       (fmt, hdr) = renderHdrs cfg t kmap
@@ -127,7 +127,7 @@ type Trailer = Name "column header"
 hdrFmt :: HeaderLine -> FmtLine
 hdrFmt (HdrLine fmt _ _) = fmt
 
-renderHdrs :: PP.Pretty v
+renderHdrs :: Sayable "normal" v
            => RenderConfig -> KVITable v -> (KeyVals, KeyVals)
            -> (FmtLine, [Text])
 renderHdrs cfg t kmap =
@@ -143,13 +143,13 @@ renderHdrs cfg t kmap =
                 [] -> fmtLine mempty
                 (hrow:_) -> hdrFmt hrow
 
-hdrstep :: PP.Pretty v
+hdrstep :: Sayable "normal" v
         => RenderConfig -> KVITable v -> (KeyVals, KeyVals) -> [HeaderLine]
 hdrstep _cfg t ([], []) =
   -- colStackAt wasn't recognized, so devolve into a non-colstack table
   let valcoltxt = t ^. KVIT.valueColName
       valcoltsz = nameLength valcoltxt
-      valsizes  = toEnum . length . show . PP.pretty . snd <$> KVIT.toList t
+      valsizes  = toEnum . length . sez @"normal" . snd <$> KVIT.toList t
       valwidth  = maxOf 0 $ valcoltsz : valsizes
       hdrVal = TxtVal $ nameText valcoltxt
   in single $ HdrLine (fmtLine $ single valwidth) (single hdrVal) ""
@@ -162,11 +162,11 @@ hdrstep cfg t ((key,keyvals) : keys, colKeyMap) =
   in reverse $ fst $ foldl mkhdr (mempty, key) $ hdrstep cfg t (keys, colKeyMap)
   -- first line shows hdrval for non-colstack'd columns, others are blank
 
-hdrvalstep :: PP.Pretty v
+hdrvalstep :: Sayable "normal" v
            => RenderConfig -> KVITable v -> KeyVals -> KeySpec
            -> [HeaderLine]
 hdrvalstep cfg t ((key,titles) : []) steppath =
-  let cvalWidths kv = fmap (toEnum . length . show . PP.pretty . snd) $
+  let cvalWidths kv = fmap (toEnum . length . sez @"normal" . snd) $
                       filter ((L.isSuffixOf (snoc steppath (key, kv))) . fst)
                       $ KVIT.toList t
       colWidth kv = let cvw = cvalWidths kv
@@ -219,7 +219,7 @@ hdrvalstep _ _ [] _ = error "ASCII hdrvalstep with empty keys after matching col
 
 ----------------------------------------------------------------------
 
-renderSeq :: PP.Pretty v
+renderSeq :: Sayable "normal" v
           => RenderConfig -> FmtLine -> (KeyVals, KeyVals) -> KVITable v
           -> [Text]
 renderSeq cfg fmt kmap kvitbl = fmtRender fmt . snd <$> asciiRows kmap mempty
@@ -234,7 +234,7 @@ renderSeq cfg fmt kmap kvitbl = fmtRender fmt . snd <$> asciiRows kmap mempty
                    Nothing -> hideBlankRows cfg
                    Just _  -> False
       in if skip then mempty
-         else single $ (False, single $ maybe (TxtVal "") TxtVal (T.pack . show . PP.pretty <$> v) )
+         else single $ (False, single $ maybe (TxtVal "") TxtVal (T.pack . sez @"normal" <$> v) )
     asciiRows ([], colKeyMap) path =
       let filterOrDefaultBlankRows = fmap (fmap defaultBlanks) . filterBlank
           defaultBlanks = fmap (\v -> maybe (TxtVal "") TxtVal v)
@@ -256,7 +256,7 @@ renderSeq cfg fmt kmap kvitbl = fmtRender fmt . snd <$> asciiRows kmap mempty
 
     multivalRows :: KeyVals -> KeySpec -> [ Maybe Text ]
     multivalRows ((key, keyvals) : []) path =
-      let showEnt = T.pack . show . PP.pretty
+      let showEnt = T.pack . sez @"normal"
       in (\v -> (showEnt <$> (KVIT.lookup' (snoc path (key,v)) kvitbl))) <$> keyvals
     multivalRows ((key, keyvals) : kseq) path =
       concatMap (\v -> multivalRows kseq (snoc path (key,v))) keyvals

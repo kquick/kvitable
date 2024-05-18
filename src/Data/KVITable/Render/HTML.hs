@@ -33,7 +33,7 @@ import qualified Data.Text.Lazy as TL
 import           Lens.Micro ( (^.) )
 import           Lucid
 import           Numeric.Natural
-import qualified Prettyprinter as PP
+import           Text.Sayable
 
 import           Data.KVITable as KVIT
 import           Data.KVITable.Internal.Helpers
@@ -48,7 +48,7 @@ import           Prelude hiding ( lookup )
 -- definition; it is intended to be embedded in a larger HTML
 -- document.
 
-render :: PP.Pretty v => RenderConfig -> KVITable v -> Text
+render :: Sayable "html" v => RenderConfig -> KVITable v -> Text
 render cfg t =
   let kmap = renderingKeyVals cfg $ t ^. keyVals
       (fmt, hdr) = renderHdrs cfg kmap t
@@ -132,7 +132,7 @@ instance Semigroup HeaderLine where
 hdrFmt :: HeaderLine -> FmtLine
 hdrFmt (HdrLine fmt _ _) = fmt
 
-renderHdrs :: PP.Pretty v
+renderHdrs :: Sayable "html" v
            => RenderConfig -> (KeyVals, KeyVals) -> KVITable v
            -> ( FmtLine, Html () )
 renderHdrs cfg kmap t = ( rowfmt, sequence_ hdrs )
@@ -141,7 +141,7 @@ renderHdrs cfg kmap t = ( rowfmt, sequence_ hdrs )
     (hrows, rowfmt) = hdrstep cfg t kmap
     renderHdr (HdrLine fmt hdrvals trailer) = fmtRender fmt trailer hdrvals
 
-hdrstep :: PP.Pretty v
+hdrstep :: Sayable "html" v
         => RenderConfig -> KVITable v -> (KeyVals, KeyVals)
         -> (NEL.NonEmpty HeaderLine, FmtLine)
 hdrstep _cfg t ([], []) =
@@ -161,13 +161,13 @@ hdrstep cfg t ((key,_) : keys, colKeys) =
      , fmtAddColLeft 1 lowestfmt
      )
 
-hdrvalstep :: PP.Pretty v
+hdrvalstep :: Sayable "html" v
            => RenderConfig -> KVITable v -> KeyVals
            -> KeySpec
            -> (NEL.NonEmpty HeaderLine, FmtLine)
 hdrvalstep _ _ [] _ = error "HTML hdrvalstep with empty keys after matching colStackAt -- impossible"
 hdrvalstep cfg t ((key, titles) : []) steppath =
-  let cvalWidths kv = fmap (length . show . PP.pretty . snd) $
+  let cvalWidths kv = fmap (length . sez @"html" . snd) $
                       L.filter ((L.isSuffixOf (snoc steppath (key, kv))) . fst)
                       $ KVIT.toList t
       cwidth c = if hideBlankCols cfg && 0 == (sum $ cvalWidths c) then 0 else 1
@@ -212,7 +212,7 @@ hdrvalstep cfg t ((key, ttl:ttls) : keys) steppath =
 
 ----------------------------------------------------------------------
 
-renderSeq :: PP.Pretty v
+renderSeq :: Sayable "html" v
           => RenderConfig -> FmtLine -> (KeyVals, KeyVals)
           -> KVITable v -> Html ()
 renderSeq cfg fmt kmap t =
@@ -226,7 +226,7 @@ renderSeq cfg fmt kmap t =
                   then L.filter (not . all isNothing)
                   else id
 
-    mkVal = Val 1 False . T.pack . show . PP.pretty
+    mkVal = Val 1 False . T.pack . sez @"html"
 
     htmlRows :: (KeyVals, KeyVals) -> KeySpec -> [ [FmtVal] ]
     htmlRows ([], []) path =
