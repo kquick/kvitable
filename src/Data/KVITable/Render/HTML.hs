@@ -27,7 +27,7 @@ import           Data.List.NonEmpty ( NonEmpty( (:|) ) )
 import qualified Data.List.NonEmpty as NEL
 import           Data.Maybe ( isNothing )
 import           Data.Name ( Named, HTMLStyle, UTF8, ConvertName, convertName
-                           , convertStyle, fromText, nameText )
+                           , convertStyle, nameText )
 import           Data.Text ( Text )
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
@@ -150,7 +150,7 @@ hdrstep :: PP.Pretty v
         => RenderConfig -> KVITable v -> KeyVals -> Keys
         -> (NEL.NonEmpty HeaderLine, FmtLine)
 hdrstep _cfg t _kmap [] =
-  let hdr = Hdr 1 False $ fromText $ t ^. valueColName
+  let hdr = Hdr 1 False $ t ^. valueColName
   in ( HdrLine (FmtLine $ single 1) (single hdr) Nothing :| mempty
      , FmtLine $ single 1
      )

@@ -39,8 +39,7 @@ where
 import           Data.Function ( on )
 import qualified Data.List as L
 import qualified Data.Map as Map
-import           Data.Text ( Text )
-import Data.Name
+import           Data.Name
 import qualified GHC.Exts
 import           Lens.Micro ( Lens' )
 
@@ -69,7 +68,7 @@ data KVITable v = KVITable
     -- the defaultKeyVal for any keys not explicitly provided for that
     -- value.
 
-  , valuecolName :: Text  -- ^ name of the value cells
+  , valuecolName :: Named HTMLStyle "column header" -- ^ name of the value cells
   }
 
 instance Eq v => Eq (KVITable v) where
@@ -183,7 +182,7 @@ keyValGen f t = (\n -> t { keyvalGen = n } ) <$> f (keyvalGen t)
 -- | Fetch or set the column name for the actual value cell in the
 -- 'KVITable'.
 
-valueColName :: Lens' (KVITable v) Text
+valueColName :: Lens' (KVITable v) (Named HTMLStyle "column header")
 valueColName f t = (\n -> t { valuecolName = n } ) <$> f (valuecolName t)
 
 

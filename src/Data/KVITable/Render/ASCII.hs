@@ -145,10 +145,11 @@ hdrstep :: PP.Pretty v => RenderConfig -> KVITable v -> KeyVals -> Keys -> [Head
 hdrstep _cfg t _kmap [] =
   -- colStackAt wasn't recognized, so devolve into a non-colstack table
   let valcoltxt = t ^. KVIT.valueColName
-      valcoltsz = T.length valcoltxt
-      valsizes  = length . show . PP.pretty . snd <$> KVIT.toList t
-      valwidth  = toEnum $ maxOf 0 $ valcoltsz : valsizes
-  in single $ HdrLine (fmtLine $ single valwidth) (single (TxtVal valcoltxt)) ""
+      valcoltsz = nameLength valcoltxt
+      valsizes  = toEnum . length . show . PP.pretty . snd <$> KVIT.toList t
+      valwidth  = maxOf 0 $ valcoltsz : valsizes
+      hdrVal = TxtVal $ nameText valcoltxt
+  in single $ HdrLine (fmtLine $ single valwidth) (single hdrVal) ""
 hdrstep cfg t kmap ks@(key : keys) =
   if colStackAt cfg == Just key
   then hdrvalstep cfg t kmap mempty ks  -- switch to column-stacking mode
