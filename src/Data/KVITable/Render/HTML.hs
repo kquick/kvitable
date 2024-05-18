@@ -33,6 +33,7 @@ import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import           Lens.Micro ( (^.) )
 import           Lucid
+import           Numeric.Natural
 import qualified Prettyprinter as PP
 
 import           Data.KVITable as KVIT
@@ -69,7 +70,7 @@ instance ToHtml (Named HTMLStyle nameOf) where
 
 ----------------------------------------------------------------------
 
-data FmtLine = FmtLine [Int]  -- colspans, length is # columns
+data FmtLine = FmtLine [Natural]  -- colspans, length is # columns
 
 instance Semigroup FmtLine where
   (FmtLine c1) <> (FmtLine c2) = FmtLine $ c1 <> c2
@@ -77,13 +78,13 @@ instance Semigroup FmtLine where
 instance Monoid FmtLine where
   mempty = FmtLine mempty
 
-fmtAddColLeft :: Int -> FmtLine -> FmtLine
+fmtAddColLeft :: Natural -> FmtLine -> FmtLine
 fmtAddColLeft lspan (FmtLine col) = FmtLine $ lspan : col
 
 data FmtVal = Val Height LastInGroup Text
             | Hdr Height LastInGroup (Named HTMLStyle "column header")
             deriving Show
-type Height = Int
+type Height = Natural
 type LastInGroup = Bool
 type RightLabel = Text
 
@@ -160,7 +161,8 @@ hdrstep cfg t kmap ks@(key : keys) =
     let (nexthdr0 :| nexthdrs, lowestfmt) = hdrstep cfg t kmap keys
         (HdrLine fmt vals tr) = nexthdr0
         fmt' = fmtAddColLeft 1 fmt
-        val = Hdr (length nexthdrs + 1) False $ convertStyle $ convertName key
+        val = Hdr (toEnum (length nexthdrs) + 1) False
+              $ convertStyle $ convertName key
     in ( (HdrLine fmt' (val : vals) tr) :| nexthdrs
        , fmtAddColLeft 1 lowestfmt
        )
@@ -202,11 +204,11 @@ hdrvalstep cfg t kmap steppath (key : keys) =
            subhdr_rollup = joinHdrs <$> NEL.transpose (fst <$> subhdrs)
            joinHdrs :: NEL.NonEmpty HeaderLine -> HeaderLine
            joinHdrs (hl0 :| hls) = foldl (<>) hl0 hls
-           superFmt :: (NEL.NonEmpty HeaderLine, FmtLine) -> Int
+           superFmt :: (NEL.NonEmpty HeaderLine, FmtLine) -> Natural
            superFmt sub = let FmtLine subcols = hdrFmt $ NEL.last $ fst sub
                           in if sum subcols == 0
                              then 0
-                             else length $ L.filter (/= 0) subcols
+                             else toEnum $ length $ L.filter (/= 0) subcols
            topfmt = FmtLine $ NEL.toList (superFmt <$> subhdrs)
            tophdr = let h = Hdr 1 False
                             . convertStyle @UTF8 @HTMLStyle . convertName
@@ -252,7 +254,7 @@ renderSeq cfg fmt kmap keys t =
                 let sr = subrows keyval
                     kv = convertStyle $ convertName keyval
                 in fst
-                   $ foldl (leftAdd (length sr)) (mempty, Just kv)
+                   $ foldl (leftAdd (toEnum $ length sr)) (mempty, Just kv)
                    $ reverse
                    $ zip (endOfGroup : L.repeat False)
                    $ reverse sr
