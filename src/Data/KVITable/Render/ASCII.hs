@@ -21,13 +21,14 @@ where
 import qualified Data.List as L
 import           Data.Maybe ( isNothing )
 import           Data.Name
+import           Data.String ( fromString )
 import           Data.Text ( Text )
 import qualified Data.Text as T
 import           Lens.Micro ( (^.) )
 import           Numeric.Natural
 import           Text.Sayable
 
-import           Data.KVITable ( KVITable, KeySpec, KeyVals, keyVals )
+import           Data.KVITable ( KVITable, KeySpec, keyVals )
 import qualified Data.KVITable as KVIT
 import           Data.KVITable.Internal.Helpers
 import           Data.KVITable.Render
@@ -56,8 +57,8 @@ fmtLine cols = FmtLine cols
                Sigils { sep = "|", pad = " ", cap = "_" }
                Sigils { sep = "+", pad = "-", cap = "_" }
 
-fmtColCnt :: FmtLine -> Int
-fmtColCnt (FmtLine cols _ _) = length cols
+fmtColCnt :: FmtLine -> Natural
+fmtColCnt (FmtLine cols _ _) = nLength cols
 
 perColOvhd :: Natural
 perColOvhd = 2 -- pad chars on either side of each column's entry
@@ -71,7 +72,7 @@ perColOvhd = 2 -- pad chars on either side of each column's entry
 fmtWidth :: FmtLine -> Natural
 fmtWidth (FmtLine cols _ _) =
   let cols' = L.filter (/= 0) cols
-  in sum cols' + ((perColOvhd + 1) * (toEnum (length cols') - 1))
+  in sum cols' + ((perColOvhd + 1) * (nLength cols' - 1))
 
 fmtEmptyCols :: FmtLine -> Bool
 fmtEmptyCols (FmtLine cols _ _) = sum cols == 0
@@ -80,6 +81,7 @@ fmtAddColLeft :: Natural -> FmtLine -> FmtLine
 fmtAddColLeft leftCol (FmtLine cols s s') = FmtLine (leftCol : cols) s s'
 
 data FmtVal = Separator | TxtVal Text | CenterVal Text
+            | Overage  -- cells for the overflow row/column
 
 fmtRender :: FmtLine -> [FmtVal] -> Text
 fmtRender (FmtLine _cols _sigils _sepsigils) [] = ""
@@ -89,6 +91,7 @@ fmtRender (FmtLine cols sigils sepsigils) vals@(val:_) =
                        Separator   -> f sepsigils
                        TxtVal _    -> f sigils
                        CenterVal _ -> f sigils
+                       Overage     -> f sigils
            l = sig sep val
            charRepeat n c = T.pack (replicate (fromEnum n) c)
            rightAlign n t = let tl = toEnum $ T.length t
@@ -109,6 +112,7 @@ fmtRender (FmtLine cols sigils sepsigils) vals@(val:_) =
                 Separator   -> charRepeat sz '-'
                 TxtVal v    -> rightAlign sz v
                 CenterVal t -> centerIn sz t
+                Overage     -> centerIn sz "+"
             ) <>
             sig pad fld <>
             sig sep fld  -- KWQ or if next fld is Nothing
@@ -128,7 +132,7 @@ hdrFmt :: HeaderLine -> FmtLine
 hdrFmt (HdrLine fmt _ _) = fmt
 
 renderHdrs :: Sayable "normal" v
-           => RenderConfig -> KVITable v -> (KeyVals, KeyVals)
+           => RenderConfig -> KVITable v -> (TblHdrs, TblHdrs)
            -> (FmtLine, [Text])
 renderHdrs cfg t kmap =
   ( lastFmt
@@ -136,7 +140,8 @@ renderHdrs cfg t kmap =
       <> (if nullName trailer then "" else (" <- " <> nameText trailer))
     | (HdrLine fmt hdrvals trailer) <- hrows
     ] <>
-    (single $ fmtRender lastFmt (replicate (fmtColCnt lastFmt) Separator)) )
+    (single $ let sz = fromEnum $ fmtColCnt lastFmt
+              in fmtRender lastFmt (replicate sz Separator)) )
   where
     hrows = hdrstep cfg t kmap
     lastFmt = case reverse hrows of
@@ -144,44 +149,53 @@ renderHdrs cfg t kmap =
                 (hrow:_) -> hdrFmt hrow
 
 hdrstep :: Sayable "normal" v
-        => RenderConfig -> KVITable v -> (KeyVals, KeyVals) -> [HeaderLine]
+        => RenderConfig
+        -> KVITable v
+        -> (TblHdrs, TblHdrs)
+        -> [HeaderLine]
 hdrstep _cfg t ([], []) =
   -- colStackAt wasn't recognized, so devolve into a non-colstack table
   let valcoltxt = t ^. KVIT.valueColName
       valcoltsz = nameLength valcoltxt
-      valsizes  = toEnum . length . sez @"normal" . snd <$> KVIT.toList t
+      valsizes  = nLength . sez @"normal" . snd <$> KVIT.toList t
       valwidth  = maxOf 0 $ valcoltsz : valsizes
       hdrVal = TxtVal $ nameText valcoltxt
   in single $ HdrLine (fmtLine $ single valwidth) (single hdrVal) ""
 hdrstep cfg t ([], colKeyMap) =
   hdrvalstep cfg t colKeyMap mempty  -- switch to column-stacking mode
 hdrstep cfg t ((key,keyvals) : keys, colKeyMap) =
-  let keyw = max (nameLength key) $ (maxOf 0 . fmap nameLength) keyvals
+  let keyw = max (nameLength key)
+             $ (maxOf 0 . fmap (nameLength . toHdrText)) keyvals
       mkhdr (hs, v) (HdrLine fmt hdrvals trailer) =
         ( HdrLine (fmtAddColLeft keyw fmt) (TxtVal (nameText v) : hdrvals) trailer : hs , "")
   in reverse $ fst $ foldl mkhdr (mempty, key) $ hdrstep cfg t (keys, colKeyMap)
   -- first line shows hdrval for non-colstack'd columns, others are blank
 
 hdrvalstep :: Sayable "normal" v
-           => RenderConfig -> KVITable v -> KeyVals -> KeySpec
+           => RenderConfig -> KVITable v -> TblHdrs -> KeySpec
            -> [HeaderLine]
 hdrvalstep cfg t ((key,titles) : []) steppath =
-  let cvalWidths kv = fmap (toEnum . length . sez @"normal" . snd) $
-                      filter ((L.isSuffixOf (snoc steppath (key, kv))) . fst)
-                      $ KVIT.toList t
+  let cvalWidths = \case
+        V kv -> fmap (nLength . sez @"normal" . snd)
+                $ filter ((L.isSuffixOf (snoc steppath (key, kv))) . fst)
+                $ KVIT.toList t
+        AndMore _ -> [1] -- always show this column, although it has no contents
       colWidth kv = let cvw = cvalWidths kv
                     in if hideBlankCols cfg && sum cvw == 0
                        then 0
-                       else maxOf (nameLength kv) cvw
+                       else maxOf (nameLength $ toHdrText kv) cvw
       cwidths = fmap colWidth titles
       fmtcols = if equisizedCols cfg
                 then (replicate (length cwidths) (maxOf 0 cwidths))
                 else cwidths
       tr = convertName key
-  in single $ HdrLine (fmtLine $ fmtcols) (TxtVal . nameText <$> titles) tr
+      hdrTxt = nameText . toHdrText
+  in single $ HdrLine (fmtLine $ fmtcols) (TxtVal . hdrTxt <$> titles) tr
 hdrvalstep cfg t ((key,vals) : keys) steppath =
-  let subhdrsV v = hdrvalstep cfg t keys (snoc steppath (key,v))
-      subTtlHdrs = let subAtVal v = (nameLength v, subhdrsV v)
+  let subhdrsV = \case
+        V v -> hdrvalstep cfg t keys (snoc steppath (key,v))
+        _ -> mempty
+      subTtlHdrs = let subAtVal v = (nameLength $ toHdrText v, subhdrsV v)
                    in fmap subAtVal vals
       szexts = let subW (hl,sh) =
                      case sh of
@@ -203,7 +217,7 @@ hdrvalstep cfg t ((key,vals) : keys) steppath =
       rsz_hdrstack s vhs = fmap (rsz_hdrs s) vhs
       rsz_hdrs hw (HdrLine (FmtLine c s j) v r) =
         let nzCols = L.filter (/= 0) c
-            numNZCols = toEnum (length nzCols)
+            numNZCols = nLength nzCols
             pcw = sum nzCols + ((perColOvhd + 1) * (numNZCols - 1))
             (ew,w0) = let l = length nzCols
                       in if l == 0 then (0,0)
@@ -213,21 +227,31 @@ hdrvalstep cfg t ((key,vals) : keys) steppath =
       hdrJoin hl = foldl hlJoin (HdrLine (fmtLine mempty) mempty "") hl
       hlJoin (HdrLine (FmtLine c s j) v _) (HdrLine (FmtLine c' _ _) v' r) =
         HdrLine (FmtLine (c<>c') s j) (v<>v') r
-      tvals = CenterVal . nameText <$> vals
+      tvals = CenterVal . nameText . toHdrText <$> vals
   in HdrLine (fmtLine szhdrs) tvals (convertName key) : rsz_extsubhdrs
 hdrvalstep _ _ [] _ = error "ASCII hdrvalstep with empty keys after matching colStackAt -- impossible"
+
+toHdrText :: TblHdr -> Name "column header"
+toHdrText = \case
+  V kv -> convertName kv
+  AndMore n -> fromString $ sez @"normal" $ t'"{+" &+ n &+ '}'
 
 ----------------------------------------------------------------------
 
 renderSeq :: Sayable "normal" v
-          => RenderConfig -> FmtLine -> (KeyVals, KeyVals) -> KVITable v
+          => RenderConfig
+          -> FmtLine
+          -> (TblHdrs, TblHdrs)
+          -> KVITable v
           -> [Text]
 renderSeq cfg fmt kmap kvitbl = fmtRender fmt . snd <$> asciiRows kmap mempty
   where
     filterBlank = if hideBlankRows cfg
                   then L.filter (not . all isNothing . snd)
                   else id
-    asciiRows :: (KeyVals, KeyVals) -> KeySpec -> [ (Bool, [FmtVal]) ]
+    asciiRows :: (TblHdrs, TblHdrs)
+              -> KeySpec
+              -> [ (Bool, [FmtVal]) ]
     asciiRows ([], []) path =
       let v = KVIT.lookup' path kvitbl
           skip = case v of
@@ -240,24 +264,34 @@ renderSeq cfg fmt kmap kvitbl = fmtRender fmt . snd <$> asciiRows kmap mempty
           defaultBlanks = fmap (\v -> maybe (TxtVal "") TxtVal v)
       in filterOrDefaultBlankRows $ single $ (False, multivalRows colKeyMap path)
     asciiRows ((key, keyvals) : kseq, colKeyMap) path =
-      let subrows keyval = asciiRows (kseq, colKeyMap) $ snoc path (key, keyval)
+      let subrows = \case
+            V keyval -> asciiRows (kseq, colKeyMap) $ snoc path (key, keyval)
+            _ ->
+              let ttlcols = product ( length . snd <$> colKeyMap)
+              in [ (False , replicate (ttlcols + length kseq) $ Overage) ]
           grprow = \case
             subs@(sub0:_) | key `elem` rowGroup cfg ->
               let subl = single (True, replicate (length $ snd sub0) Separator)
               in if fst (last subs) then init subs <> subl else subs <> subl
             subs -> subs
           genSubRow keyval = grprow $ fst
-                             $ foldl leftAdd (mempty, keyval) $ subrows keyval
+                             $ foldl leftAdd (mempty, toHdrText keyval) $ subrows keyval
           leftAdd (acc,kv) (b,subrow) =
             (snoc acc (b, TxtVal (nameText kv) : subrow)
             , if rowRepeat cfg then kv else ""
             )
       in concat (genSubRow <$> keyvals)
 
-    multivalRows :: KeyVals -> KeySpec -> [ Maybe Text ]
+    multivalRows :: TblHdrs -> KeySpec -> [ Maybe Text ]
     multivalRows ((key, keyvals) : []) path =
       let showEnt = T.pack . sez @"normal"
-      in (\v -> (showEnt <$> (KVIT.lookup' (snoc path (key,v)) kvitbl))) <$> keyvals
+      in (\case
+             V v -> (showEnt <$> (KVIT.lookup' (snoc path (key,v)) kvitbl))
+             _ -> Nothing
+         ) <$> keyvals
     multivalRows ((key, keyvals) : kseq) path =
-      concatMap (\v -> multivalRows kseq (snoc path (key,v))) keyvals
+      concatMap (\case
+                    V v -> multivalRows kseq (snoc path (key,v))
+                    _ -> mempty
+                ) keyvals
     multivalRows [] _ = error "multivalRows cannot be called with no keys!"

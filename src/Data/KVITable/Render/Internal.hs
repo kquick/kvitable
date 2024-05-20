@@ -1,16 +1,21 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Data.KVITable.Render.Internal where
 
 import qualified Data.List as L
-import           Data.Name ( ConvertName, UTF8, nullName, nameLength, nameText )
+import           Data.Name ( Name, ConvertName, UTF8
+                           , nullName, nameLength, nameText )
 import           Data.String ( fromString )
 import qualified Data.Text as T
+import           Numeric.Natural
+import           Text.Sayable
 
 import           Data.KVITable
 import           Data.KVITable.Internal.Helpers
@@ -47,11 +52,17 @@ sortWithNums kvs =
 -- displayed (which would also mean that the hideCols/hideRows determinations in
 -- the rendering functions below are no longer needed.
 
+data TblHdr = V (KeyVal) | AndMore Natural
+
+type TblHdrs = [ (Key, [TblHdr]) ]
+
 -- | Returns the rows and columns KeyVals, with appropriate application of
 -- RenderConfig specifications: colStackAt, maxCells, maxCols.  Does not collapse
 -- empty rows or columns.
 
-renderingKeyVals :: RenderConfig -> KeyVals -> (KeyVals, KeyVals)
+renderingKeyVals :: RenderConfig
+                 -> KeyVals
+                 -> (TblHdrs, TblHdrs)
 renderingKeyVals cfg inpKvs =
   case colStackAt cfg of
     Nothing ->
@@ -100,8 +111,8 @@ renderingKeyVals cfg inpKvs =
     subOrDef d a b = if a < b then d else a - b
 
     kvs = if sortKeyVals cfg
-          then fmap sortWithNums <$> inpKvs
-          else inpKvs
+          then fmap (fmap V . sortWithNums) <$> inpKvs
+          else fmap (fmap V) <$> inpKvs
     countStacked = \case -- does not allow for hiddenCols
       [] -> 1
       ((_,vs):r) -> toEnum (L.length vs) * countStacked r
@@ -109,18 +120,24 @@ renderingKeyVals cfg inpKvs =
     trimStacked _mulSubs each n ((k,vs):[]) =
       let lvs = toEnum $ length vs
           mvs = foldl (\a b -> if b * each < n then b else a) 1 $ [0..lvs]
-          tvs = snoc (take (fromEnum mvs) vs) $ excessHdr $ lvs - mvs
+          tvs = snoc (take (fromEnum mvs) vs) $ AndMore $ lvs - mvs
           rvs = if mvs < lvs then tvs else vs
       in ((subOrDef 0 n mvs, mvs * each), [(k,rvs)])
     trimStacked mulSubs each n ((k,vs):rkvs) =
       let lvs = toEnum $ length vs
           ((n',w), kvs') = trimStacked mulSubs each n rkvs
           mvs = foldl (\a b -> if b * w < n then b else a) 1 $ [0..lvs]
-          tvs = snoc (take (fromEnum mvs) vs) $ excessHdr $ lvs - mvs
+          tvs = snoc (take (fromEnum mvs) vs) $ AndMore $ remcnt (lvs - mvs) rkvs
           rvs = if mvs < lvs then tvs else vs
       in ((subOrDef 0 n' mvs, mvs * w), (k,rvs):kvs')
-    excessHdr n = fromString $ "{+" <> show n <> "}"
+
+    remcnt n [] = n
+    remcnt n (rkv:rkvs) = n * remcnt (toEnum $ length (snd rkv)) rkvs
 
 
 instance ConvertName UTF8 "Key" "column header"
 instance ConvertName UTF8 "KeyVal" "column header"
+
+
+nLength :: Foldable t => t a -> Natural
+nLength = toEnum . length

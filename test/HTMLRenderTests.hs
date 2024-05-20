@@ -6,6 +6,7 @@ module HTMLRenderTests where
 
 import           Control.Monad ( unless )
 import qualified Data.List as L
+import           Data.String ( fromString )
 import           Data.Text ( Text )
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
@@ -55,6 +56,7 @@ cmpTables nm actual expected = do
                    , fmap (de "∌ ") $ drop (length al) el
                    , fmap (da "∹ ") $ drop (length el) al
                    ])
+    -- writeFile "test.html" $ T.unpack $ T.unlines al
     assertFailure $ T.unpack $ T.unlines details
 
 
@@ -223,5 +225,29 @@ testHTMLRendering =
                             }) zt)
          [sq2_f|examples/zoo.md|]
 
-
+    , testCase "big square table, numCols and numCells limited" $
+      let tbl = foldl KVI.foldlInsert
+                (mempty & KVI.valueColName .~ "Hits"
+                 & KVI.keyVals
+                  .~ [ ("Pitcher", [ fromString ("P" <> show n)
+                                   | n <- [0..100::Int] ])
+                     , ("Batter", [ fromString ("B" <> show n)
+                                  | n <- [0..100::Int] ])
+                     ])
+                [ ([ ("Pitcher", fromString ("P" <> show p))
+                   , ("Batter", fromString ("B" <> show b))
+                   ], p * b)
+                | p <- [0..100::Int]
+                , b <- [0..100::Int]
+                ]
+      in cmpTables "big table grouped sorted no-subtype colstack"
+         (KTRH.render (cfg0 { KTR.sortKeyVals = True
+                            , KTR.rowRepeat   = False
+                            , KTR.rowGroup    = [ "Location", "Biome", "Category" ]
+                            , KTR.colStackAt  = Just "Batter"
+                            , KTR.equisizedCols = False
+                            , KTR.maxCols = 20
+                            , KTR.maxCells = 600
+                            }) tbl)
+         [sq2_f|test/bigsquare.md|]
     ]

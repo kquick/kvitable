@@ -5,6 +5,7 @@
 module AsciiRenderTests where
 
 import           Control.Monad ( unless )
+import           Data.String ( fromString )
 import           Data.Text ( Text )
 import qualified Data.Text as T
 import           Lens.Micro ( (^.), (.~), (%~), (&) )
@@ -44,6 +45,7 @@ cmpTables nm actual expected =
                    , fmap (de "∌ ") $ drop (length al) el
                    , fmap (da "∹ ") $ drop (length el) al
                    ])
+    -- writeFile "test.txt" $ T.unpack $ T.unlines al
     assertFailure $ T.unpack $ T.unlines details
 
 
@@ -863,4 +865,30 @@ testAsciiRendering =
 |          |           |          |      |    1 |   odd |
 ****|]
 
+
+    , testCase "big square table, numCols and numCells limited" $
+      let tbl = foldl KVI.foldlInsert
+                (mempty & KVI.valueColName .~ "Hits"
+                 & KVI.keyVals
+                  .~ [ ("Pitcher", [ fromString ("P" <> show n)
+                                   | n <- [0..100::Int] ])
+                     , ("Batter", [ fromString ("B" <> show n)
+                                  | n <- [0..100::Int] ])
+                     ])
+                [ ([ ("Pitcher", fromString ("P" <> show p))
+                   , ("Batter", fromString ("B" <> show b))
+                   ], p * b)
+                | p <- [0..100::Int]
+                , b <- [0..100::Int]
+                ]
+      in cmpTables "big table grouped sorted no-subtype colstack"
+         (KTRA.render (cfg0 { KTR.sortKeyVals = True
+                            , KTR.rowRepeat   = False
+                            , KTR.rowGroup    = [ "Location", "Biome", "Category" ]
+                            , KTR.colStackAt  = Just "Batter"
+                            , KTR.equisizedCols = False
+                            , KTR.maxCols = 20
+                            , KTR.maxCells = 600
+                            }) tbl)
+         [sq_f|test/bigsquare.md|]
       ]

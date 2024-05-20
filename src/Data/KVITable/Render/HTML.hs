@@ -2,6 +2,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -27,6 +28,7 @@ import qualified Data.List.NonEmpty as NEL
 import           Data.Maybe ( isNothing )
 import           Data.Name ( Named, HTMLStyle, UTF8, convertName
                            , convertStyle, nameText )
+import           Data.String ( fromString )
 import           Data.Text ( Text )
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
@@ -79,10 +81,11 @@ instance Monoid FmtLine where
 fmtAddColLeft :: Natural -> FmtLine -> FmtLine
 fmtAddColLeft lspan (FmtLine col) = FmtLine $ lspan : col
 
-data FmtVal = Val Height LastInGroup Text
-            | Hdr Height LastInGroup (Named HTMLStyle "column header")
-            deriving Show
+data FmtVal = Val Span LastInGroup Bool Text
+            | Hdr Span LastInGroup (Named HTMLStyle "column header")
+data Span = Singular | Cols Width | Rows Height
 type Height = Natural
+type Width = Natural
 type LastInGroup = Bool
 type RightLabel = Named HTMLStyle "column header"
 
@@ -92,24 +95,39 @@ fmtRender (FmtLine cols) mbRLabel vals = do
     let excessColCnt = length cols - length vals
         cell (w,Hdr h l v) =
           let a = [ [ class_ "kvitable_th" ]
-                  , if h == 1 then mempty
-                    else [ rowspan_ $ T.pack $ show h ]
-                  , if w == 1 then mempty
+                  , case h of
+                      Singular -> mempty
+                      Cols n -> if w == 1 && n == 1
+                                then mempty
+                                else [ colspan_ $ T.pack $ show (n*w)
+                                     , class_ " multicol"
+                                     ]
+                      Rows 1 -> mempty
+                      Rows n -> [ rowspan_ $ T.pack $ show n ]
+                  , if w == 1
+                       || case h of
+                            Cols n | n > 1 -> True
+                            _ -> False
+                    then mempty
                     else [ colspan_ $ T.pack $ show w
                          , class_ " multicol" ]
                   , if l then [ class_ " last_in_group" ] else mempty
                   ]
           in th_ (concat $ reverse a) (div_ $ span_ $ toHtml v)
-        cell (w,Val h l v) =
+        cell (w,Val h l i v) =
           let a = [ [ class_ "kvitable_td" ]
-                  , if h == 1 then mempty
-                    else [ rowspan_ $ T.pack $ show h ]
+                  , case h of
+                      Singular -> mempty
+                      Cols 1 -> mempty
+                      Cols n -> [ colspan_ $ T.pack $ show n ]
+                      Rows 1 -> mempty
+                      Rows n -> [ rowspan_ $ T.pack $ show n ]
                   , if w == 1 then mempty
                     else [ colspan_ $ T.pack $ show w
                          , class_ " multicol" ]
                   , if l then [ class_ " last_in_group" ] else mempty
                   ]
-          in td_ (concat $ reverse a) (toHtml v)
+          in td_ (concat $ reverse a) $ if i then i_ (toHtml v) else toHtml v
         labelMark = toHtmlRaw ("&nbsp;&larr;" :: Text)
         labelHtml = th_ [ class_ "rightlabel kvitable_th" ] .
                     (labelMark <>) .
@@ -133,7 +151,9 @@ hdrFmt :: HeaderLine -> FmtLine
 hdrFmt (HdrLine fmt _ _) = fmt
 
 renderHdrs :: Sayable "html" v
-           => RenderConfig -> (KeyVals, KeyVals) -> KVITable v
+           => RenderConfig
+           -> (TblHdrs, TblHdrs)
+           -> KVITable v
            -> ( FmtLine, Html () )
 renderHdrs cfg kmap t = ( rowfmt, sequence_ hdrs )
   where
@@ -142,12 +162,15 @@ renderHdrs cfg kmap t = ( rowfmt, sequence_ hdrs )
     renderHdr (HdrLine fmt hdrvals trailer) = fmtRender fmt trailer hdrvals
 
 hdrstep :: Sayable "html" v
-        => RenderConfig -> KVITable v -> (KeyVals, KeyVals)
+        => RenderConfig
+        -> KVITable v
+        -> (TblHdrs, TblHdrs)
         -> (NEL.NonEmpty HeaderLine, FmtLine)
 hdrstep _cfg t ([], []) =
-  let hdr = Hdr 1 False $ t ^. valueColName
-  in ( HdrLine (FmtLine $ single 1) (single hdr) Nothing :| mempty
-     , FmtLine $ single 1
+  let hdr = Hdr Singular False $ t ^. valueColName
+      one = single 1
+  in ( HdrLine (FmtLine one) (single hdr) Nothing :| mempty
+     , FmtLine one
      )
 hdrstep cfg t ([], colKeys) =
   hdrvalstep cfg t colKeys mempty -- switch to column stacking mode
@@ -155,14 +178,16 @@ hdrstep cfg t ((key,_) : keys, colKeys) =
   let (nexthdr0 :| nexthdrs, lowestfmt) = hdrstep cfg t (keys, colKeys)
       (HdrLine fmt vals tr) = nexthdr0
       fmt' = fmtAddColLeft 1 fmt
-      val = Hdr (toEnum (length nexthdrs) + 1) False
+      val = Hdr (Rows $ nLength nexthdrs + 1) False
             $ convertStyle $ convertName key
   in ( (HdrLine fmt' (val : vals) tr) :| nexthdrs
      , fmtAddColLeft 1 lowestfmt
      )
 
 hdrvalstep :: Sayable "html" v
-           => RenderConfig -> KVITable v -> KeyVals
+           => RenderConfig
+           -> KVITable v
+           -> TblHdrs
            -> KeySpec
            -> (NEL.NonEmpty HeaderLine, FmtLine)
 hdrvalstep _ _ [] _ = error "HTML hdrvalstep with empty keys after matching colStackAt -- impossible"
@@ -170,16 +195,21 @@ hdrvalstep cfg t ((key, titles) : []) steppath =
   let cvalWidths kv = fmap (length . sez @"html" . snd) $
                       L.filter ((L.isSuffixOf (snoc steppath (key, kv))) . fst)
                       $ KVIT.toList t
-      cwidth c = if hideBlankCols cfg && 0 == (sum $ cvalWidths c) then 0 else 1
+      cwidth = \case
+        V c -> if hideBlankCols cfg && 0 == (sum $ cvalWidths c) then 0 else 1
+        AndMore _ -> 1
       fmt = FmtLine (cwidth <$> titles)
-      hdr = Hdr 1 False . convertStyle @UTF8 @HTMLStyle . convertName <$> titles
+      hdr = Hdr Singular False . toHdrText <$> titles
       k = convertStyle @UTF8 @HTMLStyle $ convertName key
   in ( HdrLine fmt hdr (Just k) :| mempty, fmt)
 hdrvalstep _cfg _t ((_key, []) : _keys) _steppath = error "cannot happen"
 hdrvalstep cfg t ((key, ttl:ttls) : keys) steppath =
   let
     titles = ttl :| ttls
-    subhdrsV v = hdrvalstep cfg t keys (snoc steppath (key,v))
+    subhdrsV v = hdrvalstep cfg t keys (case v of
+                                          V kv -> snoc steppath (key,kv)
+                                          _ -> steppath
+                                       )
     subTtlHdrs :: NEL.NonEmpty (NEL.NonEmpty HeaderLine, FmtLine)
     subTtlHdrs = subhdrsV <$> titles
     subhdrs :: NEL.NonEmpty (NEL.NonEmpty HeaderLine, FmtLine)
@@ -201,20 +231,31 @@ hdrvalstep cfg t ((key, ttl:ttls) : keys) steppath =
     superFmt sub = let FmtLine subcols = hdrFmt $ NEL.last $ fst sub
                    in if sum subcols == 0
                       then 0
-                      else toEnum $ length $ L.filter (/= 0) subcols
+                      else nLength $ L.filter (/= 0) subcols
     topfmt = FmtLine $ NEL.toList (superFmt <$> subhdrs)
-    tophdr = let h = Hdr 1 False
-                     . convertStyle @UTF8 @HTMLStyle . convertName
-                     <$> titles
+    tophdr = let h = Hdr Singular False . toHdrText <$> titles
                  tr = convertStyle @UTF8 @HTMLStyle $ convertName key
              in HdrLine topfmt (NEL.toList h) $ Just tr
   in ( NEL.cons tophdr subhdr_rollup, F.fold (snd <$> subTtlHdrs))
 
+
+toHdrText :: TblHdr -> Named HTMLStyle "column header"
+toHdrText th = case toHdrText' th of
+                 Right t -> t
+                 Left n -> fromString $ sez @"html" $ t'"{+" &+ n &+ '}'
+
+toHdrText' :: TblHdr -> Either Natural (Named HTMLStyle "column header")
+toHdrText' = \case
+  V kv -> Right $ convertStyle @UTF8 @HTMLStyle $ convertName kv
+  AndMore n -> Left n
+
 ----------------------------------------------------------------------
 
 renderSeq :: Sayable "html" v
-          => RenderConfig -> FmtLine -> (KeyVals, KeyVals)
-          -> KVITable v -> Html ()
+          => RenderConfig -> FmtLine
+          -> (TblHdrs, TblHdrs)
+          -> KVITable v
+          -> Html ()
 renderSeq cfg fmt kmap t =
   let lst = htmlRows kmap mempty
       rndr = fmtRender fmt Nothing
@@ -226,47 +267,60 @@ renderSeq cfg fmt kmap t =
                   then L.filter (not . all isNothing)
                   else id
 
-    mkVal = Val 1 False . T.pack . sez @"html"
+    mkVal = Val Singular False False . T.pack . sez @"html"
 
-    htmlRows :: (KeyVals, KeyVals) -> KeySpec -> [ [FmtVal] ]
+    htmlRows :: (TblHdrs, TblHdrs) -> KeySpec -> [ [FmtVal] ]
     htmlRows ([], []) path =
       let v = lookup' path t
           skip = case v of
             Nothing -> hideBlankRows cfg
             Just _ -> False
-          row = maybe (Val 1 False "") mkVal v
+          row = maybe (Val Singular False False "") mkVal v
       in if skip then mempty else single $ single row
     htmlRows ([], colKeyMap) path =
           let filterOrDefaultBlankRows =
-                fmap (fmap (maybe (Val 1 False "") id)) . filterBlank
+                fmap (fmap (maybe (Val Singular False False "") id)) . filterBlank
           in filterOrDefaultBlankRows $ single $ multivalRows colKeyMap path
     htmlRows ((key,keyvals) : kseq, colKeyMap) path =
-      let subrows keyval = htmlRows (kseq, colKeyMap) $ snoc path (key,keyval)
-
+      let subrows = \case
+            V keyval -> htmlRows (kseq, colKeyMap) $ snoc path (key,keyval)
+            _ -> [ [Val (Cols nCols) True True "more"] ]
+          nCols = product ( nLength . snd <$> colKeyMap )
+          nHdrs = nLength kseq + 1
           endOfGroup = key `elem` rowGroup cfg
           genSubrows keyval =
             let sr = subrows keyval
-                kv = convertStyle $ convertName keyval
+                kv = toHdrText' keyval
             in fst
-               $ foldl (leftAdd (toEnum $ length sr)) (mempty, Just kv)
+               $ foldl (leftAdd (nLength sr)) (mempty, Just kv)
                $ reverse
                $ zip (endOfGroup : L.repeat False)
                $ reverse sr
           leftAdd nrows (acc,mb'kv) (endGrp, subrow) =
             let sr = setValGrouping endGrp <$> subrow
-                setValGrouping g (Val h g' v) = Val h (g || g') v
+                setValGrouping g (Val h g' i v) = Val h (g || g') i v
                 setValGrouping g (Hdr h g' v) = Hdr h (g || g') v
-            in ( snoc acc (case mb'kv of
-                              Nothing -> sr
-                              Just kv ->
-                                let w = if rowRepeat cfg then 1 else nrows
-                                in Hdr w endOfGroup kv : sr
-                          )
+            in ( snoc acc
+                 (case mb'kv of
+                     Nothing -> sr
+                     Just (Right kv) ->
+                       let w = if rowRepeat cfg then 1 else nrows
+                       in Hdr (Rows w) endOfGroup kv : sr
+                     Just (Left n) ->
+                       let m = fromString $ sez @"html" $ t'"{+" &+ n &+ '}'
+                       in Hdr (Cols nHdrs) True m : sr
+                 )
                , if rowRepeat cfg then mb'kv else Nothing)
       in concat $ each genSubrows keyvals
 
     multivalRows [] _ = error "HTML multivalRows cannot be called with no keys!"
     multivalRows ((key, keyvals) : []) path =
-      (\v -> mkVal <$> lookup' (snoc path (key,v)) t) <$> keyvals
+      (\case
+          V v -> mkVal <$> lookup' (snoc path (key,v)) t
+          _ -> Just $ Val Singular False True "... -->"
+      ) <$> keyvals
     multivalRows ((key, keyvals) : kseq) path =
-      concatMap (\v -> multivalRows kseq (snoc path (key,v))) keyvals
+      concatMap (\case
+                   V v -> multivalRows kseq (snoc path (key,v))
+                   _ -> mempty
+                ) keyvals
