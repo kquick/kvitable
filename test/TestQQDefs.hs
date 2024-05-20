@@ -13,6 +13,9 @@ sq = qqExtractor 1 "\n****"
 sq_f = quoteFile sq
 sq2_f = quoteFile $ qqExtractor 2 "\n****"
 sq3_f = quoteFile $ qqExtractor 3 "\n****"
+sq4_f = quoteFile $ qqExtractor 4 "\n****"
+sq5_f = quoteFile $ qqExtractor 5 "\n****"
+sq6_f = quoteFile $ qqExtractor 6 "\n****"
 
 uq :: QuasiQuoter
 uq = qqExtractor 1 "\n____"

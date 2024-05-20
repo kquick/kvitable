@@ -147,7 +147,7 @@ testHTMLRendering =
                            , KTR.equisizedCols = False
                            , KTR.colStackAt    = Just "hundreds"
                            }) nestedTable)
-        [sq_f|test/evenodd.md|]
+        [sq2_f|test/evenodd.md|]
 
     , testCase "nested table hide=none, fitted, colstack=hundreds, maxCells=60" $
       do
@@ -160,7 +160,7 @@ testHTMLRendering =
                          , KTR.colStackAt    = Just "hundreds"
                          , KTR.maxCells      = 60
                          }) nestedTable)
-        [sq2_f|test/evenodd.md|]
+        [sq4_f|test/evenodd.md|]
 
     , testCase "nested table hide=none, fitted, no colstack, maxCells=60" $
       do
@@ -173,7 +173,7 @@ testHTMLRendering =
                          , KTR.colStackAt    = Nothing
                          , KTR.maxCells      = 60
                          }) nestedTable)
-        [sq3_f|test/evenodd.md|]
+        [sq6_f|test/evenodd.md|]
 
     , testCase "nested table hideBlank=rol,col colstack=thousands" $
       cmpTables "nested table hideBlank=row,col colstack=thousands"

@@ -3,6 +3,22 @@ When a maximum size is specified for the table, it will be truncated.
 Here is the even/odd table in its unconstrained form, with column stacking at the thousands
 
 ****
+| millions | thousands | _____ 0 _____ | _______ 1 ________ | _______ 2 ________ | <- hundreds
+|          |           | _ 0 _ | _ 2 _ | _ 0 _ | ___ 2 ____ | _ 0 _ | ___ 2 ____ | <- tens
+|          |           | 0 | 1 | 0 | 1 | 0 | 1 |    0 |   1 | 0 | 1 |    0 |   1 | <- ones
++----------+-----------+---+---+---+---+---+---+------+-----+---+---+------+-----+
+|        0 |         0 |   |   |   |   |   |   | even | odd |   |   | even | odd |
+|          |         1 |   |   |   |   |   |   | even | odd |   |   | even | odd |
+|          |         2 |   |   |   |   |   |   | even | odd |   |   | even | odd |
+|        1 |         0 |   |   |   |   |   |   | even | odd |   |   | even | odd |
+|          |         1 |   |   |   |   |   |   | even | odd |   |   | even | odd |
+|          |         2 |   |   |   |   |   |   | even | odd |   |   | even | odd |
+|        2 |         0 |   |   |   |   |   |   | even | odd |   |   | even | odd |
+|          |         1 |   |   |   |   |   |   | even | odd |   |   | even | odd |
+|          |         2 |   |   |   |   |   |   | even | odd |   |   | even | odd |
+****
+
+****
 <table class="kvitable">
 <thead class="kvitable_head">
 <tr class="kvitable_tr">
@@ -397,6 +413,19 @@ Here is the even/odd table in its unconstrained form, with column stacking at th
 And here is the same table with a `maxCells` specification of `60`:
 
 ****
+| millions | thousands | _____ 0 _____ | _______ 1 ________ | _______ 2 ________ | <- hundreds
+|          |           | _ 0 _ | _ 2 _ | _ 0 _ | ___ 2 ____ | _ 0 _ | ___ 2 ____ | <- tens
+|          |           | 0 | 1 | 0 | 1 | 0 | 1 |    0 |   1 | 0 | 1 |    0 |   1 | <- ones
++----------+-----------+---+---+---+---+---+---+------+-----+---+---+------+-----+
+|        0 |         0 |   |   |   |   |   |   | even | odd |   |   | even | odd |
+|          |         1 |   |   |   |   |   |   | even | odd |   |   | even | odd |
+|          |         2 |   |   |   |   |   |   | even | odd |   |   | even | odd |
+|     {+2} |         0 |   |   |   |   |   |   |      |     |   |   |      |     |
+|          |         1 |   |   |   |   |   |   |      |     |   |   |      |     |
+|          |         2 |   |   |   |   |   |   |      |     |   |   |      |     |
+****
+
+****
 <table class="kvitable">
 <thead class="kvitable_head">
 <tr class="kvitable_tr">
@@ -714,6 +743,23 @@ And here is the same table with a `maxCells` specification of `60`:
 ****
 
 The same table with no column stacking and a `maxCells` specification of `60`:
+
+****
+| millions | thousands | hundreds | tens | ones | Value |
++----------+-----------+----------+------+------+-------+
+|        0 |         0 |        1 |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |           |        2 |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |         1 |        1 |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |           |        2 |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |         2 |        1 |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+|          |           |        2 |    2 |    0 |  even |
+|          |           |          |      |    1 |   odd |
+****
 
 ****
 <table class="kvitable">

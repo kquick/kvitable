@@ -675,6 +675,29 @@ testAsciiRendering =
                            }) nestedTable)
         [uq_f|examples/hundreds_all.md|]
 
+    , testCase "nested table hide=none colstack=hundreds testfile" $
+      cmpTables "nested table hide=none colstack=hundreds testfile"
+        (KTRA.render (cfg0 { KTR.sortKeyVals = True
+                           , KTR.rowRepeat = False
+                           , KTR.hideBlankCols = False
+                           , KTR.hideBlankRows = False
+                           , KTR.equisizedCols = False
+                           , KTR.colStackAt = Just "hundreds"
+                           }) nestedTable)
+        [sq_f|test/evenodd.md|]
+
+    , testCase "nested table hide=none colstack=hundreds, maxCells=60" $
+      cmpTables "nested table hide=none colstack=hundreds, maxCells=60"
+        (KTRA.render (cfg0 { KTR.sortKeyVals = True
+                           , KTR.rowRepeat = False
+                           , KTR.hideBlankCols = False
+                           , KTR.hideBlankRows = False
+                           , KTR.equisizedCols = False
+                           , KTR.colStackAt = Just "hundreds"
+                           , KTR.maxCells = 60
+                           }) nestedTable)
+        [sq3_f|test/evenodd.md|]
+
     , testCase "nested table hide=none colstack=hundreds equisized" $
       cmpTables "nested table hide=none colstack=hundreds equisized"
         (KTRA.render (cfg0 { KTR.sortKeyVals = True
@@ -706,6 +729,17 @@ testAsciiRendering =
                            , KTR.equisizedCols = False
                            }) nestedTable)
         [uq3_f|README.md|]
+
+    , testCase "nested table hideBlank=rol,col, maxCells=60" $
+      cmpTables "nested table hideBlank=row,col, maxCells=60"
+        (KTRA.render (cfg0 { KTR.sortKeyVals = True
+                           , KTR.rowRepeat = False
+                           , KTR.hideBlankCols = True
+                           , KTR.hideBlankRows = True
+                           , KTR.equisizedCols = False
+                           , KTR.maxCells = 60
+                           }) nestedTable)
+        [sq5_f|test/evenodd.md|]
 
     , testCase "nested table hideBlank=none" $
       cmpTables "nested table hideBlank=none"
