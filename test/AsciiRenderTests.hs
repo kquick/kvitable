@@ -122,7 +122,7 @@ testAsciiRendering =
 
     , testCase "medium sized table render, sorted" $
       cmpTables "medium table"
-      (KTRA.render (cfg0 { KTR.sortKeyVals = True }) mediumKVI) [sq|
+      (KTRA.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha }) mediumKVI) [sq|
 ****
 | compiler | debug | optimization | Value |
 +----------+-------+--------------+-------+
@@ -144,7 +144,7 @@ testAsciiRendering =
 
     , testCase "medium sized table render, unsorted" $
       cmpTables "medium table"
-      (KTRA.render (cfg0 { KTR.sortKeyVals = False }) mediumKVI) [sq|
+      (KTRA.render (cfg0 { KTR.sortKeyVals = Nothing }) mediumKVI) [sq|
 ****
 | compiler | debug | optimization | Value |
 +----------+-------+--------------+-------+
@@ -166,7 +166,7 @@ testAsciiRendering =
 
     , testCase "medium table, sorted, blank, row skip, no repeats" $
       cmpTables "medium table"
-      (KTRA.render (cfg0 { KTR.sortKeyVals = True
+      (KTRA.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                          , KTR.rowRepeat = False }) mediumKVI) [sq|
 ****
 | compiler | debug | optimization | Value |
@@ -189,7 +189,7 @@ testAsciiRendering =
 
     , testCase "medium table, sorted, blank row skip, no repeats, group unknown" $
       cmpTables "medium table s 0brow 0rep [unknown]"
-      (KTRA.render (cfg0 { KTR.sortKeyVals = True
+      (KTRA.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                          , KTR.rowRepeat = False
                          , KTR.rowGroup = ["unknown"]
                          }) mediumKVI) [sq|
@@ -214,7 +214,7 @@ testAsciiRendering =
 
     , testCase "medium table, sorted, blank row skip, no repeats, group compiler" $
       cmpTables "medium table s 0brow 0rep [unknown]"
-      (KTRA.render (cfg0 { KTR.sortKeyVals = True
+      (KTRA.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                          , KTR.rowRepeat = False
                          , KTR.rowGroup = ["compiler"]
                          }) mediumKVI) [sq|
@@ -244,7 +244,7 @@ testAsciiRendering =
 
     , testCase "medium table, sorted, blank row skip, no repeats, multi-group" $
       cmpTables "medium table s 0brow 0rep [compiler,debug]"
-      (KTRA.render (cfg0 { KTR.sortKeyVals = True
+      (KTRA.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                          , KTR.rowRepeat = False
                          , KTR.rowGroup = ["unknown", "compiler", "unk", "debug", "huh"]
                          }) mediumKVI) [sq|
@@ -277,7 +277,7 @@ testAsciiRendering =
 
     , testCase "medium table, sorted, blank" $
       cmpTables "medium table"
-      (KTRA.render (cfg0 { KTR.sortKeyVals = True
+      (KTRA.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                          , KTR.hideBlankRows = False }) mediumKVI) [sq|
 ****
 | compiler | debug | optimization | Value |
@@ -316,7 +316,7 @@ testAsciiRendering =
 
     , testCase "medium sized table render, sorted, no blank, colstack unknown" $
       cmpTables "medium table s 0blnk colstk=unknown"
-      (KTRA.render (cfg0 { KTR.sortKeyVals = True
+      (KTRA.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                          , KTR.colStackAt  = Just "unknown"
                          }) mediumKVI) [sq|
 ****
@@ -340,7 +340,7 @@ testAsciiRendering =
 
     , testCase "medium sized table render, sorted, !blank, colstk optimization" $
       cmpTables "medium table s 0blnk colstk=optimization"
-      (KTRA.render (cfg0 { KTR.sortKeyVals = True
+      (KTRA.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                          , KTR.hideBlankRows = True
                          , KTR.colStackAt  = Just "optimization"
                          }) mediumKVI) [sq|
@@ -359,7 +359,7 @@ testAsciiRendering =
 
     , testCase "medium, sorted, !blank, !row rpt, rgrp compiler colstk optimization" $
       cmpTables "medium table s 0blnk colstk=optimization rowgrp=compiler"
-      (KTRA.render (cfg0 { KTR.sortKeyVals = True
+      (KTRA.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                          , KTR.hideBlankRows = True
                          , KTR.colStackAt  = Just "optimization"
                          , KTR.rowRepeat   = False
@@ -385,7 +385,7 @@ testAsciiRendering =
 
     , testCase "medium sized table render, sorted, !blank, equisize, colstack debug" $
       cmpTables "medium table s 0blnk equisize colstk=debug"
-        (KTRA.render (cfg0 { KTR.sortKeyVals = True
+        (KTRA.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                            , KTR.hideBlankRows = True
                            , KTR.equisizedCols = True
                            , KTR.colStackAt  = Just "debug"
@@ -403,7 +403,7 @@ testAsciiRendering =
 
     , testCase "medium sized table render, sorted, !blank, fitsize, colstack debug" $
       cmpTables "medium table s 0blnk fitsize colstk=debug"
-        (KTRA.render (cfg0 { KTR.sortKeyVals = True
+        (KTRA.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                            , KTR.hideBlankRows = True
                            , KTR.equisizedCols = False
                            , KTR.colStackAt  = Just "debug"
@@ -433,7 +433,7 @@ testAsciiRendering =
                              ]
             step "ASCII rendering unsorted"
             cmpTables "small table right aligned unsorted"
-              (KTRA.render (cfg0 { KTR.sortKeyVals = False }) tbl) [sq|
+              (KTRA.render (cfg0 { KTR.sortKeyVals = Nothing }) tbl) [sq|
 ****
 | id |         name |
 +----+--------------+
@@ -443,7 +443,7 @@ testAsciiRendering =
 ****|]
             step "ASCII rendering sorted"
             cmpTables "small table right aligned sorted"
-              (KTRA.render (cfg0 { KTR.sortKeyVals = True }) tbl) [sq|
+              (KTRA.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha }) tbl) [sq|
 ****
 | id |         name |
 +----+--------------+
@@ -464,7 +464,7 @@ testAsciiRendering =
                 , ([("City name", "Sydney"),   ("Area", "2058"), ("Population", "4336374")], 1214.8)
                 ]
       in cmpTables "small table float value table"
-         (KTRA.render (cfg0 { KTR.sortKeyVals = True }) tbl) [sq|
+         (KTRA.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha }) tbl) [sq|
 ****
 | City name | Area | Population | Annual Rainfall |
 +-----------+------+------------+-----------------+
@@ -479,7 +479,7 @@ testAsciiRendering =
 
     , testCase "big table grouped sorted" $
       cmpTables "big table grouped sorted"
-      (KTRA.render (cfg0 { KTR.sortKeyVals = True
+      (KTRA.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                          , KTR.rowRepeat = False
                          , KTR.rowGroup = [ "Location", "Biome", "Category" ]
                          }) zooTable2)
@@ -495,7 +495,7 @@ testAsciiRendering =
                  Nothing -> (ks,v) : newl
                  Just v' -> (ks, v' + v) : filter ((ks /=) . fst) newl
       in cmpTables "big table grouped sorted no-subtype colstack"
-         (KTRA.render (cfg0 { KTR.sortKeyVals = True
+         (KTRA.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                             , KTR.rowRepeat = False
                             , KTR.rowGroup = [ "Location", "Biome", "Category" ]
                             , KTR.colStackAt = Just "Name"
@@ -505,7 +505,7 @@ testAsciiRendering =
 
     , testCase "big table grouped sorted equisized" $
       cmpTables "big table grouped sorted equisized"
-      (KTRA.render (cfg0 { KTR.sortKeyVals = True
+      (KTRA.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                          , KTR.rowRepeat = False
                          , KTR.hideBlankCols = False
                          , KTR.equisizedCols = True
@@ -533,7 +533,7 @@ testAsciiRendering =
 
     , testCase "big table grouped sorted fitsize colstack=ghcver" $
       cmpTables "big table grouped sorted fitsize colstack=ghcver"
-        (KTRA.render (cfg0 { KTR.sortKeyVals = True
+        (KTRA.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                          , KTR.rowRepeat = False
                          , KTR.hideBlankCols = False
                          , KTR.equisizedCols = False
@@ -561,7 +561,7 @@ testAsciiRendering =
 
     , testCase "big table grouped sorted fitsize colstack=Strategy" $
       cmpTables "big table grouped sorted fitsize colstack=Strategy"
-        (KTRA.render (cfg0 { KTR.sortKeyVals = True
+        (KTRA.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                          , KTR.rowRepeat = False
                          , KTR.hideBlankCols = False
                          , KTR.equisizedCols = False
@@ -587,7 +587,7 @@ testAsciiRendering =
 
     , testCase "nested table hide=blankRows,blankCols colstack=ones" $
       cmpTables "nested table hide=blankRows,blankCols colstack=ones"
-        (KTRA.render (cfg0 { KTR.sortKeyVals = True
+        (KTRA.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                            , KTR.rowRepeat = False
                            , KTR.hideBlankCols = True
                            , KTR.hideBlankRows = True
@@ -620,7 +620,7 @@ testAsciiRendering =
 
     , testCase "nested table colstack=tens" $
       cmpTables "nested table colstack=tens"
-        (KTRA.render (cfg0 { KTR.sortKeyVals = True
+        (KTRA.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                            , KTR.rowRepeat = False
                            , KTR.hideBlankCols = True
                            , KTR.hideBlankRows = True
@@ -657,7 +657,7 @@ testAsciiRendering =
 
     , testCase "nested table hide=blankCols,blankRows colstack=hundreds" $
       cmpTables "nested table hide-blankCols,blankRows colstack=hundreds"
-        (KTRA.render (cfg0 { KTR.sortKeyVals = True
+        (KTRA.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                            , KTR.rowRepeat = False
                            , KTR.hideBlankCols = True
                            , KTR.hideBlankRows = True
@@ -668,7 +668,7 @@ testAsciiRendering =
 
     , testCase "nested table hide=none colstack=hundreds" $
       cmpTables "nested table hide=none colstack=hundreds"
-        (KTRA.render (cfg0 { KTR.sortKeyVals = True
+        (KTRA.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                            , KTR.rowRepeat = False
                            , KTR.hideBlankCols = False
                            , KTR.hideBlankRows = False
@@ -679,7 +679,7 @@ testAsciiRendering =
 
     , testCase "nested table hide=none colstack=hundreds testfile" $
       cmpTables "nested table hide=none colstack=hundreds testfile"
-        (KTRA.render (cfg0 { KTR.sortKeyVals = True
+        (KTRA.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                            , KTR.rowRepeat = False
                            , KTR.hideBlankCols = False
                            , KTR.hideBlankRows = False
@@ -690,7 +690,7 @@ testAsciiRendering =
 
     , testCase "nested table hide=none colstack=hundreds, maxCells=60" $
       cmpTables "nested table hide=none colstack=hundreds, maxCells=60"
-        (KTRA.render (cfg0 { KTR.sortKeyVals = True
+        (KTRA.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                            , KTR.rowRepeat = False
                            , KTR.hideBlankCols = False
                            , KTR.hideBlankRows = False
@@ -702,7 +702,7 @@ testAsciiRendering =
 
     , testCase "nested table hide=none colstack=hundreds equisized" $
       cmpTables "nested table hide=none colstack=hundreds equisized"
-        (KTRA.render (cfg0 { KTR.sortKeyVals = True
+        (KTRA.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                            , KTR.rowRepeat = False
                            , KTR.hideBlankCols = False
                            , KTR.hideBlankRows = False
@@ -713,7 +713,7 @@ testAsciiRendering =
 
     , testCase "nested table hideBlank=rol,col colstack=thousands" $
       cmpTables "nested table hideBlank=row,col colstack=thousands"
-        (KTRA.render (cfg0 { KTR.sortKeyVals = True
+        (KTRA.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                            , KTR.rowRepeat = False
                            , KTR.hideBlankCols = True
                            , KTR.hideBlankRows = True
@@ -724,7 +724,7 @@ testAsciiRendering =
 
     , testCase "nested table hideBlank=rol,col" $
       cmpTables "nested table hideBlank=row,col"
-        (KTRA.render (cfg0 { KTR.sortKeyVals = True
+        (KTRA.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                            , KTR.rowRepeat = False
                            , KTR.hideBlankCols = True
                            , KTR.hideBlankRows = True
@@ -734,7 +734,7 @@ testAsciiRendering =
 
     , testCase "nested table hideBlank=rol,col, maxCells=60" $
       cmpTables "nested table hideBlank=row,col, maxCells=60"
-        (KTRA.render (cfg0 { KTR.sortKeyVals = True
+        (KTRA.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                            , KTR.rowRepeat = False
                            , KTR.hideBlankCols = True
                            , KTR.hideBlankRows = True
@@ -745,7 +745,7 @@ testAsciiRendering =
 
     , testCase "nested table hideBlank=none" $
       cmpTables "nested table hideBlank=none"
-        (KTRA.render (cfg0 { KTR.sortKeyVals = True
+        (KTRA.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                            , KTR.rowRepeat = False
                            , KTR.hideBlankCols = False
                            , KTR.hideBlankRows = False
@@ -882,7 +882,7 @@ testAsciiRendering =
                 , b <- [0..100::Int]
                 ]
       in cmpTables "big table grouped sorted no-subtype colstack"
-         (KTRA.render (cfg0 { KTR.sortKeyVals = True
+         (KTRA.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                             , KTR.rowRepeat   = False
                             , KTR.rowGroup    = [ "Location", "Biome", "Category" ]
                             , KTR.colStackAt  = Just "Batter"

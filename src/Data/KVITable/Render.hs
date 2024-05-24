@@ -7,13 +7,16 @@ module Data.KVITable.Render
   (
     RenderConfig(..)
   , defaultRenderConfig
+  , sortNumericAlpha
   )
 where
 
-import Data.Name ( Name )
-import Numeric.Natural
+import qualified Data.List as L
+import           Data.Name ( Name, nameText, nameLength, nullName )
+import qualified Data.Text as T
+import           Numeric.Natural
 
-import Data.KVITable
+import           Data.KVITable
 
 
 -- | Returns the default rendering configuration, to be used with a
@@ -24,7 +27,7 @@ defaultRenderConfig = RenderConfig
   { hideBlankRows = True
   , hideBlankCols = True
   , equisizedCols = True
-  , sortKeyVals   = False
+  , sortKeyVals   = Nothing
   , colStackAt    = Nothing
   , rowRepeat     = True
   , rowGroup      = []
@@ -54,13 +57,31 @@ data RenderConfig = RenderConfig
     -- (e.g. HTML) where the backend provides table rendering
     -- functionality.
 
-  , sortKeyVals :: Bool
-    -- ^ 'True' (default is False) to sort the KeyVal entries when
-    -- rendering a table.
+  , sortKeyVals :: Maybe ((KeyVals, KeyVals) -> (KeyVals, KeyVals))
+    -- ^ Specifies a function to sort the KeyVals (rows and columns,
+    -- respectively) for the output.  If no function provided, no sorting is
+    -- performed.  The provided KeyVals are in the order in which the Keys are
+    -- declared to the KVITable; the values for each key may be in an arbitrary
+    -- order. The usual expectation is that this will only sort the values for
+    -- each Key, but it is allowed to re-order the Keys as well.
+    --
+    -- Sorting is done *prior* to applying maxCells and maxCols limitations; this
+    -- provides the unsurprising results for the user but means that this
+    -- function may perform extra work to sort rows and columns that will not be
+    -- shown.
+    --
+    -- It is permissible to move entries from the rows to the columns and
+    -- vice-versa; this function has control over the shape of the resulting
+    -- table, which includes redistributing the rows and columns such that the
+    -- result will violate maxCols (but not maxCells).
+    --
+    -- The columns keyvals will be empty if colStackAt is Nothing.
 
   , colStackAt :: Maybe Key
-    -- ^ Column key to begin stacking keys in columns and sub-columns
-    -- rather than creating additional sub-rows.
+    -- ^ Column key to begin stacking keys in columns and sub-columns rather than
+    -- creating additional sub-rows.  This is performed on the
+    -- originally-specified key order, prior to calling any provided
+    -- 'sortKeyVals' function.
 
   , rowRepeat :: Bool
     -- ^ 'True' (default) if an identical 'KeyVal' is to be repeated
@@ -101,3 +122,43 @@ data RenderConfig = RenderConfig
     -- value takes priority over this value.  See the 'maxCells' for more
     -- information.
   }
+
+
+-- | Table KeyVals sorting function; alphanumeric with numeric preference.  This
+-- can be used as the sortKeyVals function for the table.
+--
+-- If the value starts or ends with a digit, then this should do a rough numeric
+-- sort on the expectation that the digits represent a version or some other
+-- numeric value.  As an approximation of a numeric sort, sort by word size and
+-- then string value.  This will result in [ "1", "2", "10", "50", "400" ], but
+-- would fail with [ "v1.0", "v2.0", "v3.0", "v2.0.5", "v1.0.0.3" ], but it's a
+-- reasonably fast heuristic and probably better than a straight ascii sort.
+
+
+sortNumericAlpha :: (KeyVals, KeyVals) -> (KeyVals, KeyVals)
+sortNumericAlpha (rowkeys, colkeys) = ( fmap sortWithNums <$> rowkeys
+                                      , fmap sortWithNums <$> colkeys
+                                      )
+
+
+-- | Sorting for KeyVals.  If the value starts or ends with a digit,
+-- then this should do a rough numeric sort on the expectation that
+-- the digits represent a version or some other numeric value.  As an
+-- approximation of a numeric sort, sort by word size and then string
+-- value.  This will result in [ "1", "2", "10", "50", "400" ], but
+-- would fail with [ "v1.0", "v2.0", "v3.0", "v2.0.5", "v1.0.0.3" ],
+-- but it's a reasonably fast heuristic and probably better than a
+-- straight ascii sort.
+--
+-- This function is used by the 'KVITable' rendering functions.
+
+sortWithNums :: [KeyVal] -> [KeyVal]
+sortWithNums kvs =
+  let skvs = zip (rank <$> kvs) kvs
+      rank e = if (not $ nullName e) &&
+                  or [ T.head (nameText e) `elem` ['0'..'9']
+                     , T.last (nameText e) `elem` ['0'..'9']
+                     ]
+               then nameLength e
+               else 0
+  in snd <$> L.sort skvs

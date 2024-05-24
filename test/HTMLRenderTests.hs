@@ -118,7 +118,7 @@ testHTMLRendering =
 
     , testCase "nested table hideBlank=rows,cols, fitted, colstack=hundreds" $
       cmpTables "nested table hideBlank=rows,cols, fitted, colstack=hundreds"
-      (KTRH.render (cfg0 { KTR.sortKeyVals     = True
+      (KTRH.render (cfg0 { KTR.sortKeyVals   = Just KTR.sortNumericAlpha
                          , KTR.rowRepeat     = False
                          , KTR.hideBlankCols = True
                          , KTR.hideBlankRows = True
@@ -129,7 +129,7 @@ testHTMLRendering =
 
     , testCase "nested table hide=none, fitted, colstack=hundreds" $
       cmpTables "nested table hide=none, fitted, colstack=hundreds"
-      (KTRH.render (cfg0 { KTR.sortKeyVals   = True
+      (KTRH.render (cfg0 { KTR.sortKeyVals   = Just KTR.sortNumericAlpha
                          , KTR.rowRepeat     = False
                          , KTR.hideBlankCols = False
                          , KTR.hideBlankRows = False
@@ -142,7 +142,7 @@ testHTMLRendering =
     , testCase "nested table hide=none, fitted, colstack=hundreds" $
       do
        cmpTables "nested table hide=none, fitted, colstack=hundreds"
-        (KTRH.render (cfg0 { KTR.sortKeyVals   = True
+        (KTRH.render (cfg0 { KTR.sortKeyVals   = Just KTR.sortNumericAlpha
                            , KTR.rowRepeat     = False
                            , KTR.hideBlankCols = False
                            , KTR.hideBlankRows = False
@@ -154,7 +154,7 @@ testHTMLRendering =
     , testCase "nested table hide=none, fitted, colstack=hundreds, maxCells=60" $
       do
        cmpTables "nested table hide=none, fitted, colstack=hundreds, maxCells=60"
-        (KTRH.render (cfg0 { KTR.sortKeyVals   = True
+        (KTRH.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                          , KTR.rowRepeat     = False
                          , KTR.hideBlankCols = False
                          , KTR.hideBlankRows = False
@@ -167,7 +167,7 @@ testHTMLRendering =
     , testCase "nested table hide=none, fitted, no colstack, maxCells=60" $
       do
        cmpTables "nested table hide=none, fitted, no colstack, maxCells=60"
-        (KTRH.render (cfg0 { KTR.sortKeyVals   = True
+        (KTRH.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                          , KTR.rowRepeat     = False
                          , KTR.hideBlankCols = False
                          , KTR.hideBlankRows = False
@@ -179,7 +179,7 @@ testHTMLRendering =
 
     , testCase "nested table hideBlank=rol,col colstack=thousands" $
       cmpTables "nested table hideBlank=row,col colstack=thousands"
-        (KTRH.render (cfg0 { KTR.sortKeyVals = True
+        (KTRH.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                            , KTR.rowRepeat = False
                            , KTR.hideBlankCols = True
                            , KTR.hideBlankRows = True
@@ -190,7 +190,7 @@ testHTMLRendering =
 
     , testCase "nested table hideBlank=rol,col" $
       cmpTables "nested table hideBlank=row,col"
-        (KTRH.render (cfg0 { KTR.sortKeyVals = True
+        (KTRH.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                            , KTR.rowRepeat = False
                            , KTR.hideBlankCols = True
                            , KTR.hideBlankRows = True
@@ -201,7 +201,7 @@ testHTMLRendering =
 
     , testCase "big table grouped sorted" $
       cmpTables "big table grouped sorted"
-      (KTRH.render (cfg0 { KTR.sortKeyVals = True
+      (KTRH.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                          , KTR.rowRepeat = False
                          , KTR.rowGroup = [ "Location", "Biome", "Category" ]
                          }) zooTable2)
@@ -217,7 +217,7 @@ testHTMLRendering =
                  Nothing -> (ks,v) : newl
                  Just v' -> (ks, v' + v) : filter ((ks /=) . fst) newl
       in cmpTables "big table grouped sorted no-subtype colstack"
-         (KTRH.render (cfg0 { KTR.sortKeyVals = True
+         (KTRH.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                             , KTR.rowRepeat   = False
                             , KTR.rowGroup    = [ "Location", "Biome", "Category" ]
                             , KTR.colStackAt  = Just "Name"
@@ -241,7 +241,7 @@ testHTMLRendering =
                 , b <- [0..100::Int]
                 ]
       in cmpTables "big table grouped sorted no-subtype colstack"
-         (KTRH.render (cfg0 { KTR.sortKeyVals = True
+         (KTRH.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
                             , KTR.rowRepeat   = False
                             , KTR.rowGroup    = [ "Location", "Biome", "Category" ]
                             , KTR.colStackAt  = Just "Batter"

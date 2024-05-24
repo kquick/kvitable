@@ -10,39 +10,13 @@
 module Data.KVITable.Render.Internal where
 
 import qualified Data.List as L
-import           Data.Name ( Name, ConvertName, UTF8
-                           , nullName, nameLength, nameText )
+import           Data.Name ( ConvertName, UTF8 )
 import           Data.String ( fromString )
-import qualified Data.Text as T
 import           Numeric.Natural
-import           Text.Sayable
 
 import           Data.KVITable
 import           Data.KVITable.Internal.Helpers
 import           Data.KVITable.Render
-
-
--- | Sorting for KeyVals.  If the value starts or ends with a digit,
--- then this should do a rough numeric sort on the expectation that
--- the digits represent a version or some other numeric value.  As an
--- approximation of a numeric sort, sort by word size and then string
--- value.  This will result in [ "1", "2", "10", "50", "400" ], but
--- would fail with [ "v1.0", "v2.0", "v3.0", "v2.0.5", "v1.0.0.3" ],
--- but it's a reasonably fast heuristic and probably better than a
--- straight ascii sort.
---
--- This function is used by the 'KVITable' rendering functions.
-
-sortWithNums :: [KeyVal] -> [KeyVal]
-sortWithNums kvs =
-  let skvs = zip (rank <$> kvs) kvs
-      rank e = if (not $ nullName e) &&
-                  or [ T.head (nameText e) `elem` ['0'..'9']
-                     , T.last (nameText e) `elem` ['0'..'9']
-                     ]
-               then nameLength e
-               else 0
-  in snd <$> L.sort skvs
 
 
 -- TODO: to allow for hideBlankCols, the KVITable should keep track of what the
@@ -64,44 +38,45 @@ renderingKeyVals :: RenderConfig
                  -> KeyVals
                  -> (TblHdrs, TblHdrs)
 renderingKeyVals cfg inpKvs =
-  case colStackAt cfg of
-    Nothing ->
-      -- width is just keys, height is combination of keys and values
-      let maxNumKeys = maxCells cfg
-          origNumKeys = toEnum $ length kvs
-          okKvs = if origNumKeys > maxNumKeys
-                  then snoc (take (fromEnum maxNumKeys) kvs)
-                       (fromString
-                        $ "{+ " <> show (origNumKeys - maxNumKeys) <> " MORE}"
-                       , mempty
-                       )
-                  else kvs
-          -- n.b. maxCols is not really useful here, since all but the last
-          -- column are headers and values are only shown in that last column.
-      in (snd $ trimStacked True 1 maxNumKeys okKvs, [])
-    Just c ->
-      let maxNumCols = min (maxCells cfg) (maxCols cfg)
-          (kvsRows, kvsCols) = span ((c /=) . fst) kvs
-          numRegularColKvs = let v = length kvs - length kvsCols
-                             in if v < 0 then error "BAD1" else toEnum v
-          numStackedCols = countStacked kvsCols
-          origNumCols = numRegularColKvs + numStackedCols
-          allowedNumCols = subOrDef 1 maxNumCols numRegularColKvs
-          okKvsCols = if origNumCols > maxNumCols
+  let maxNumKeys = maxCells cfg
+      origNumKeys = toEnum $ length inpKvs
+      maxNumCols = min (maxCells cfg) (maxCols cfg)
+
+  in case colStackAt cfg of
+       Nothing ->
+         -- width is just keys, height is combination of keys and values
+         let okKvs = if origNumKeys > maxNumKeys
+                     then snoc (take (fromEnum maxNumKeys) (fst kvs))
+                          (fromString
+                           $ "{+ " <> show (origNumKeys - maxNumKeys) <> " MORE}"
+                          , mempty
+                          )
+                     else (fst kvs)
+             -- n.b. maxCols is not really useful here, since all but the last
+             -- column are headers and values are only shown in that last column.
+         in (snd $ trimStacked True 1 maxNumKeys okKvs, [])
+       Just _c ->
+         let (kvsRows, kvsCols) = kvs
+             numRegularColKvs = let v = length inpKvs - length kvsCols
+                                in if v < 0 then error "BAD1" else toEnum v
+             numStackedCols = countStacked kvsCols
+             origNumCols = numRegularColKvs + numStackedCols
+             allowedNumCols = subOrDef 1 maxNumCols numRegularColKvs
+             okKvsCols = if origNumCols > maxNumCols
                       then if numStackedCols <= maxNumCols
                            then kvsCols
                            else snd $ trimStacked False 1 allowedNumCols kvsCols
                       else kvsCols
-          allowedNumRows = subOrDef 1 (maxCells cfg)
+             allowedNumRows = subOrDef 1 (maxCells cfg)
                            (if origNumCols > maxNumCols
                              then if numStackedCols <= maxNumCols
                                   then numStackedCols
                                   else allowedNumCols
                              else numStackedCols
                            )
-          eachRowCols = min maxNumCols numStackedCols
-          okKvsRows = snd $ trimStacked False eachRowCols allowedNumRows kvsRows
-      in (okKvsRows, okKvsCols)
+             eachRowCols = min maxNumCols numStackedCols
+             okKvsRows = snd $ trimStacked False eachRowCols allowedNumRows kvsRows
+         in (okKvsRows, okKvsCols)
 
   where
 
@@ -110,9 +85,16 @@ renderingKeyVals cfg inpKvs =
     -- value.
     subOrDef d a b = if a < b then d else a - b
 
-    kvs = if sortKeyVals cfg
-          then fmap (fmap V . sortWithNums) <$> inpKvs
-          else fmap (fmap V) <$> inpKvs
+    kvs = let kvs' = case colStackAt cfg of
+                       Nothing -> (inpKvs, mempty)
+                       Just c -> span ((/= c) . fst) inpKvs
+              ksrt = case sortKeyVals cfg of
+                       Nothing -> kvs'
+                       Just fn -> fn kvs'
+          in ( fmap (fmap V) <$> fst ksrt
+             , fmap (fmap V) <$> snd ksrt
+             )
+
     countStacked = \case -- does not allow for hiddenCols
       [] -> 1
       ((_,vs):r) -> toEnum (L.length vs) * countStacked r

@@ -1,5 +1,12 @@
 # Revision history for KVITable
 
+## next
+
+* The `RenderConfig.sortKeyVals` changed from a `Boolean` to a `Maybe fn`, where
+  the `fn` is a sorting function which is provided a `(rowKeyvals, colKeyvals)`
+  tuple and should return that tuple, sorted.  The `sortNumericAlpha` function
+  can be used to obtain the old 'True' behavior.
+
 ## 1.0 3.0 -- 2024-02-22
 
 * Support GHC 9.8.
