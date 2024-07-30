@@ -23,7 +23,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.levers.follows = "levers";
       inputs.sayable.follows = "sayable";
-      # inputs.parameterized-utils-src.follows = "parameterized-utils-src";
+      inputs.parameterized-utils-src.follows = "parameterized-utils-src";
       # inputs.tasty-checklist.follows = "tasty-checklist";
       # inputs.hedgehog-src.follows = "hedgehog-src";
       # inputs.hedgehog-classes-src.follows = "hedgehog-classes-src";
@@ -34,11 +34,15 @@
       inputs.nixpkgs.follows = "nixpkgs8";
       inputs.levers.follows = "levers";
       inputs.sayable.follows = "sayable8";
-      # inputs.parameterized-utils-src.follows = "parameterized-utils-src";
+      inputs.parameterized-utils-src.follows = "parameterized-utils-src";
       # inputs.tasty-checklist.follows = "tasty-checklist";
       # inputs.hedgehog-src.follows = "hedgehog-src";
       # inputs.hedgehog-classes-src.follows = "hedgehog-classes-src";
       # inputs.tasty-hedgehog-src.follows = "tasty-hedgehog-src";
+    };
+    parameterized-utils-src = {
+      url = "github:GaloisInc/parameterized-utils";
+      flake = false;
     };
     sayable = {
       url = "github:kquick/sayable/9c76cc5";
@@ -54,6 +58,7 @@
 
   outputs = { self, nixpkgs, nixpkgs8, levers
             , html-parse-src, named-text, named-text8, sayable, sayable8
+            , parameterized-utils-src
             }: rec
       {
         devShells = levers.eachSystem (s:
