@@ -55,7 +55,7 @@ library
                      , Data.KVITable.Render.HTML
                      , Data.KVITable.Render.Internal
   -- other-modules:
-  build-depends:       base >=4.12 && <4.20
+  build-depends:       base >=4.12 && <4.21
                      , containers
                      , lucid  >= 2.9 && < 2.12
                      , microlens >= 0.4 && < 0.5
