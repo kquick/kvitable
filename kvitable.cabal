@@ -42,6 +42,8 @@ extra-source-files:  CHANGELOG.md
                    , examples/hundreds_all.md
                    , examples/zoo.md
                    , README.md
+                   , test/evenodd.md
+                   , test/bigsquare.md
 
 library
   hs-source-dirs:      src
