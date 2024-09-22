@@ -1,5 +1,9 @@
 # Revision history for KVITable
 
+## 1.1.0.1 -- 2024-09-21
+
+* Add test/evenodd.md and test/bigsquare.md to cabal data files.
+
 ## 1.1.0.0 -- 2024-09-18
 
 * The `RenderConfig.sortKeyVals` changed from a `Boolean` to a `Maybe fn`, where
