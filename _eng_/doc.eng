@@ -1,0 +1,24 @@
+
+doc
+  README
+    type = Overview
+    title = README
+    abstract = Description of the kvitable library
+    location = ./README.md
+  zoo
+    type = Example
+    title = Zoo Animals
+    location = examples/zoo.md
+    abstract =
+
+      Example usage of kvitable with various row grouping and column stacking
+      configuration specifications for kvitable.
+
+  hundreds
+    type = Example
+    title = Decimal counts
+    location = examples/hundreds.md
+    abstract =
+
+      Example usage of kvitable with column stacking and row repeating
+      configurations, extending the examples shown in the README.
