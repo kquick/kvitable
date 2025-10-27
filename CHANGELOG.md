@@ -1,5 +1,9 @@
 # Revision history for KVITable
 
+## 1.1.1.0 -- 2025-10-26
+
+* Enable building with GHC 8.10 -- GHC 9.12.
+
 ## 1.1.0.1 -- 2024-09-21
 
 * Add test/evenodd.md and test/bigsquare.md to cabal data files.
