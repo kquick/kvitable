@@ -11,49 +11,36 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ghc-version: [ "ghc96", "ghc94", "ghc92", "ghc810" ]
-        # ghc98 is disabled until a flake sayable strategy for ghc98 is valid
+        ghc-version: [ "ghc912", "ghc910", "ghc98", "ghc96", "ghc94" ]
     steps:
-      - uses: cachix/install-nix-action@v20
+      - uses: cachix/install-nix-action@v31
         with:
-          # n.b. this is a flake build, so the cachix-installed nix channel is
-          # unused except to get nix itself.  As of v20 (at least), cachix is
-          # installing flake-compatible nix versions, so this has been removed to
-          # eliminate unneeded duplication, but left here as an exemplar should
-          # this be needed in the future.
-          #
-          # nix_path: nixpkgs=channel:nixos-23.05
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: cachix/cachix-action@v12
+      - uses: cachix/cachix-action@v16
         with:
           name: kquick
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
       - name: build ${{ matrix.ghc-version }}
         shell: bash
         run: nix build github:${{ github.repository }}/${{ github.sha }}#kvitable.${{ matrix.ghc-version }}
-  tests:
+  nixbuilds:
     runs-on: ubuntu-latest
     steps:
-      - uses: cachix/install-nix-action@v20
+      - uses: actions/checkout@v5
+      - name: Lighten the load
+        uses: endersonmenezes/free-disk-space@v3
+        with:
+          remove_android: true
+          remove_dotnet: true
+          remove_folders: "/usr/share/swift /usr/share/miniconda /usr/share /usr/local/share"
+          rm_cmd: "rmz"  # faster
+      - uses: cachix/install-nix-action@v31
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: cachix/cachix-action@v12
+      - uses: cachix/cachix-action@v16
         with:
           name: kquick
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-      - name: test
+      - name: nixbuild_all
         shell: bash
-        run: nix build -L github:${{ github.repository }}/${{ github.sha }}#TESTS
-  doc:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: cachix/install-nix-action@v20
-        with:
-          github_access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: cachix/cachix-action@v12
-        with:
-          name: kquick
-          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-      - name: doc
-        shell: bash
-        run: nix build github:${{ github.repository }}/${{ github.sha }}#DOC
+        run: nix run github:galoisinc/eng dev nixbuild_all
