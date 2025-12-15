@@ -16,6 +16,12 @@
       repo = "nix-levers";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    html-parse-src = {
+      url = "github:bgamari/html-parse";
+      # Needed because the GHC 9.4 build in nixpkgs/23.11 has html-parse
+      # 0.2.0.2 marked as broken.
+      flake = false;
+    };
     named-text = {
       url = "github:kquick/named-text";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -36,6 +42,7 @@
 
   outputs = { self, nixpkgs
             , levers
+            , html-parse-src
             , named-text
             , sayable
             , parameterized-utils-src
@@ -55,8 +62,9 @@
           in rec {
             default = kvitable;
             kvitable = mkHaskell "kvitable" self {
-              inherit named-text sayable;
+              inherit html-parse named-text sayable;
             };
+            html-parse = mkHaskell "html-parse" html-parse-src {};
           });
       };
 }
