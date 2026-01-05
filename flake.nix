@@ -30,7 +30,13 @@
       inputs.parameterized-utils-src.follows = "parameterized-utils-src";
     };
     parameterized-utils-src = {
-      url = "github:GaloisInc/parameterized-utils";
+      # Lock to revision 6cd1f32 because the subsequent changes replace lens with
+      # microlens-pro, and the latter was only introduced in Feb 2024 (circa GHC
+      # 9.8.3), so it's not available for older nixpkgs configurations.  As of
+      # 2025 Dec, there are no functional changes in parameterized-utils, just
+      # dependency changes, and there is intent to remove the microlens-pro
+      # dependency from parameterized-utils, so freeze this until that occurs.
+      url = "github:GaloisInc/parameterized-utils/6cd1f32";
       flake = false;
     };
     sayable = {
