@@ -22,21 +22,21 @@
       # 0.2.0.2 marked as broken.
       flake = false;
     };
+    microlens-src = {
+      url = "github:stevenfontanella/microlens";
+      flake = false;
+    };
     named-text = {
       url = "github:kquick/named-text";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.levers.follows = "levers";
+      inputs.microlens-src.follows = "microlens-src";
       inputs.sayable.follows = "sayable";
       inputs.parameterized-utils-src.follows = "parameterized-utils-src";
+      inputs.tasty-checklist.follows = "tasty-checklist";
     };
     parameterized-utils-src = {
-      # Lock to revision 6cd1f32 because the subsequent changes replace lens with
-      # microlens-pro, and the latter was only introduced in Feb 2024 (circa GHC
-      # 9.8.3), so it's not available for older nixpkgs configurations.  As of
-      # 2025 Dec, there are no functional changes in parameterized-utils, just
-      # dependency changes, and there is intent to remove the microlens-pro
-      # dependency from parameterized-utils, so freeze this until that occurs.
-      url = "github:GaloisInc/parameterized-utils/6cd1f32";
+      url = "github:GaloisInc/parameterized-utils";
       flake = false;
     };
     sayable = {
@@ -44,14 +44,23 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.levers.follows = "levers";
     };
+    tasty-checklist = {
+      url = "github:kquick/tasty-checklist";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.levers.follows = "levers";
+      inputs.microlens-src.follows = "microlens-src";
+      inputs.parameterized-utils-src.follows = "parameterized-utils-src";
+    };
   };
 
   outputs = { self, nixpkgs
             , levers
             , html-parse-src
+            , microlens-src
             , named-text
             , sayable
             , parameterized-utils-src
+            , tasty-checklist
             }:
     rec
       {
@@ -68,9 +77,10 @@
           in rec {
             default = kvitable;
             kvitable = mkHaskell "kvitable" self {
-              inherit html-parse named-text sayable;
+              inherit html-parse microlens named-text sayable;
             };
             html-parse = mkHaskell "html-parse" html-parse-src {};
+            microlens = mkHaskell "microlens" "${microlens-src}/microlens" {};
           });
       };
 }
