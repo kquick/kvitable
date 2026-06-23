@@ -1,5 +1,9 @@
 # Revision history for KVITable
 
+## 1.1.2.0 -- 2026-06-23
+
+* Support GHC 9.14
+
 ## 1.1.1.1 -- 2026-03-10
 
 * Increase upper version constraint for microlens to accept 0.5.
