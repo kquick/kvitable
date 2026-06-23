@@ -78,7 +78,8 @@
             default = kvitable;
             kvitable = mkHaskell "kvitable" self {
               inherit html-parse microlens named-text sayable;
-              adjustDrv = levers.haskellUnbounded pkgs ["ghc914"] ["lucid"];
+              adjustDrv = levers.haskellUnbounded pkgs ["ghc914"]
+                ["lucid" "html-parse"];
             };
             html-parse = mkHaskell "html-parse" html-parse-src {};
             microlens = mkHaskell "microlens" "${microlens-src}/microlens" {};
