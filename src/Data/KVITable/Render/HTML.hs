@@ -27,7 +27,7 @@ import           Data.List.NonEmpty ( NonEmpty( (:|) ) )
 import qualified Data.List.NonEmpty as NEL
 import           Data.Maybe ( isNothing )
 import           Data.Name ( Named, HTMLStyle, UTF8, convertName
-                           , convertStyle, nameText )
+                           , convertStyle, fromText, nameText )
 import           Data.String ( fromString )
 import           Data.Text ( Text )
 import qualified Data.Text as T
@@ -35,6 +35,7 @@ import qualified Data.Text.Lazy as TL
 import           Lens.Micro ( (^.) )
 import           Lucid
 import           Numeric.Natural
+import qualified Prettyprinter as PP
 import           Text.Sayable
 
 import           Data.KVITable as KVIT
@@ -50,11 +51,17 @@ import           Prelude hiding ( lookup )
 -- definition; it is intended to be embedded in a larger HTML
 -- document.
 
-render :: Sayable "html" v => RenderConfig -> KVITable v -> Text
-render cfg t =
+render :: Sayable "html" v
+       => Maybe (PP.Doc SayableAnn -> Text)
+          -- ^ Custom renderer which can be used to reAnnotate and perform
+          -- special rendering if desired.  The default is the plain text
+          -- rendering.
+       -> RenderConfig
+       -> KVITable v -> Text
+render rndr cfg t =
   let kmap = renderingKeyVals cfg $ t ^. keyVals
-      (fmt, hdr) = renderHdrs cfg kmap t
-      bdy = renderSeq cfg fmt kmap t
+      (fmt, hdr) = renderHdrs rndr cfg kmap t
+      bdy = renderSeq rndr cfg fmt kmap t
   in TL.toStrict $ renderText $
      table_ [ class_ "kvitable" ] $
      do maybe mempty (caption_ . toHtml . convertStyle @UTF8 @HTMLStyle)
@@ -151,31 +158,33 @@ hdrFmt :: HeaderLine -> FmtLine
 hdrFmt (HdrLine fmt _ _) = fmt
 
 renderHdrs :: Sayable "html" v
-           => RenderConfig
+           => Maybe (PP.Doc SayableAnn -> Text)
+           -> RenderConfig
            -> (TblHdrs, TblHdrs)
            -> KVITable v
            -> ( FmtLine, Html () )
-renderHdrs cfg kmap t = ( rowfmt, sequence_ hdrs )
+renderHdrs rndr cfg kmap t = ( rowfmt, sequence_ hdrs )
   where
     hdrs = fmap renderHdr hrows
-    (hrows, rowfmt) = hdrstep cfg t kmap
+    (hrows, rowfmt) = hdrstep rndr cfg t kmap
     renderHdr (HdrLine fmt hdrvals trailer) = fmtRender fmt trailer hdrvals
 
 hdrstep :: Sayable "html" v
-        => RenderConfig
+        => Maybe (PP.Doc SayableAnn -> Text)
+        -> RenderConfig
         -> KVITable v
         -> (TblHdrs, TblHdrs)
         -> (NEL.NonEmpty HeaderLine, FmtLine)
-hdrstep _cfg t ([], []) =
+hdrstep _rndr _cfg t ([], []) =
   let hdr = Hdr Singular False $ t ^. valueColName
       one = single 1
   in ( HdrLine (FmtLine one) (single hdr) Nothing :| mempty
      , FmtLine one
      )
-hdrstep cfg t ([], colKeys) =
-  hdrvalstep cfg t colKeys mempty -- switch to column stacking mode
-hdrstep cfg t ((key,_) : keys, colKeys) =
-  let (nexthdr0 :| nexthdrs, lowestfmt) = hdrstep cfg t (keys, colKeys)
+hdrstep rndr cfg t ([], colKeys) =
+  hdrvalstep rndr cfg t colKeys mempty -- switch to column stacking mode
+hdrstep rndr cfg t ((key,_) : keys, colKeys) =
+  let (nexthdr0 :| nexthdrs, lowestfmt) = hdrstep rndr cfg t (keys, colKeys)
       (HdrLine fmt vals tr) = nexthdr0
       fmt' = fmtAddColLeft 1 fmt
       val = Hdr (Rows $ nLength nexthdrs + 1) False
@@ -185,13 +194,14 @@ hdrstep cfg t ((key,_) : keys, colKeys) =
      )
 
 hdrvalstep :: Sayable "html" v
-           => RenderConfig
+           => Maybe (PP.Doc SayableAnn -> Text)
+           -> RenderConfig
            -> KVITable v
            -> TblHdrs
            -> KeySpec
            -> (NEL.NonEmpty HeaderLine, FmtLine)
-hdrvalstep _ _ [] _ = error "HTML hdrvalstep with empty keys after matching colStackAt -- impossible"
-hdrvalstep cfg t ((key, titles) : []) steppath =
+hdrvalstep _ _ _ [] _ = error "HTML hdrvalstep with empty keys after matching colStackAt -- impossible"
+hdrvalstep rndr cfg t ((key, titles) : []) steppath =
   let cvalWidths kv = fmap (length . sez @"html" . snd) $
                       L.filter ((L.isSuffixOf (snoc steppath (key, kv))) . fst)
                       $ KVIT.toList t
@@ -199,17 +209,17 @@ hdrvalstep cfg t ((key, titles) : []) steppath =
         V c -> if hideBlankCols cfg && 0 == (sum $ cvalWidths c) then 0 else 1
         AndMore _ -> 1
       fmt = FmtLine (cwidth <$> titles)
-      hdr = Hdr Singular False . toHdrText <$> titles
+      hdr = Hdr Singular False . toHdrText rndr <$> titles
       k = convertStyle @UTF8 @HTMLStyle $ convertName key
   in ( HdrLine fmt hdr (Just k) :| mempty, fmt)
-hdrvalstep _cfg _t ((_key, []) : _keys) _steppath = error "cannot happen"
-hdrvalstep cfg t ((key, ttl:ttls) : keys) steppath =
+hdrvalstep _ _cfg _t ((_key, []) : _keys) _steppath = error "cannot happen"
+hdrvalstep rndr cfg t ((key, ttl:ttls) : keys) steppath =
   let
     titles = ttl :| ttls
-    subhdrsV v = hdrvalstep cfg t keys (case v of
-                                          V kv -> snoc steppath (key,kv)
-                                          _ -> steppath
-                                       )
+    subhdrsV v = hdrvalstep rndr cfg t keys (case v of
+                                               V kv -> snoc steppath (key,kv)
+                                               _ -> steppath
+                                            )
     subTtlHdrs :: NEL.NonEmpty (NEL.NonEmpty HeaderLine, FmtLine)
     subTtlHdrs = subhdrsV <$> titles
     subhdrs :: NEL.NonEmpty (NEL.NonEmpty HeaderLine, FmtLine)
@@ -233,16 +243,20 @@ hdrvalstep cfg t ((key, ttl:ttls) : keys) steppath =
                       then 0
                       else nLength $ L.filter (/= 0) subcols
     topfmt = FmtLine $ NEL.toList (superFmt <$> subhdrs)
-    tophdr = let h = Hdr Singular False . toHdrText <$> titles
+    tophdr = let h = Hdr Singular False . toHdrText rndr <$> titles
                  tr = convertStyle @UTF8 @HTMLStyle $ convertName key
              in HdrLine topfmt (NEL.toList h) $ Just tr
   in ( NEL.cons tophdr subhdr_rollup, F.fold (snd <$> subTtlHdrs))
 
 
-toHdrText :: TblHdr -> Named HTMLStyle "column header"
-toHdrText th = case toHdrText' th of
-                 Right t -> t
-                 Left n -> fromString $ sez @"html" $ t'"{+" &+ n &+ '}'
+toHdrText :: Maybe (PP.Doc SayableAnn -> Text) -> TblHdr
+          -> Named HTMLStyle "column header"
+toHdrText rndr th =
+  case toHdrText' th of
+    Right t -> t
+    Left n -> maybe (fromString . sez) (fromText .) rndr
+              $ saying
+              $ sayable @"html" (t'"{+" &+ n &+ '}')
 
 toHdrText' :: TblHdr -> Either Natural (Named HTMLStyle "column header")
 toHdrText' = \case
@@ -252,14 +266,15 @@ toHdrText' = \case
 ----------------------------------------------------------------------
 
 renderSeq :: Sayable "html" v
-          => RenderConfig -> FmtLine
+          => Maybe (PP.Doc SayableAnn -> Text)
+          -> RenderConfig -> FmtLine
           -> (TblHdrs, TblHdrs)
           -> KVITable v
           -> Html ()
-renderSeq cfg fmt kmap t =
+renderSeq rndr cfg fmt kmap t =
   let lst = htmlRows kmap mempty
-      rndr = fmtRender fmt Nothing
-  in sequence_ (each rndr lst)
+      r = fmtRender fmt Nothing
+  in sequence_ (each r lst)
   where
     each = map
 
@@ -267,7 +282,10 @@ renderSeq cfg fmt kmap t =
                   then L.filter (not . all isNothing)
                   else id
 
-    mkVal = Val Singular False False . T.pack . sez @"html"
+    mkVal = Val Singular False False
+            . maybe (T.pack . sez) id rndr
+            . saying
+            . sayable @"html"
 
     htmlRows :: (TblHdrs, TblHdrs) -> KeySpec -> [ [FmtVal] ]
     htmlRows ([], []) path =
@@ -307,7 +325,9 @@ renderSeq cfg fmt kmap t =
                        let w = if rowRepeat cfg then 1 else nrows
                        in Hdr (Rows w) endOfGroup kv : sr
                      Just (Left n) ->
-                       let m = fromString $ sez @"html" $ t'"{+" &+ n &+ '}'
+                       let m = maybe (fromString . sez) (fromText .) rndr
+                               $ saying @"html"
+                               (t'"{+" &+ n &+ '}')
                        in Hdr (Cols nHdrs) True m : sr
                  )
                , if rowRepeat cfg then mb'kv else Nothing)

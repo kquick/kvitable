@@ -69,7 +69,7 @@ testHTMLRendering =
     [
       testCase "empty table, hide blank" $
       cmpTables "empty table, hide blank"
-      (KTRH.render cfg0 kvi0) [sq|
+      (KTRH.render Nothing cfg0 kvi0) [sq|
 ****
 <table class="kvitable">
   <thead class="kvitable_head">
@@ -83,7 +83,7 @@ testHTMLRendering =
 
     , testCase "empty table, show blank" $
       cmpTables "empty table, show blank"
-      (KTRH.render cfgWBlankRows kvi0) [sq|
+      (KTRH.render Nothing cfgWBlankRows kvi0) [sq|
 ****
 <table class="kvitable">
   <thead class="kvitable_head">
@@ -100,7 +100,7 @@ testHTMLRendering =
 
     , testCase "empty table with labels" $
       let kvi = mempty & KVI.keyVals @Float .~ [ ("foo", []), ("dog", []) ]
-      in cmpTables "empty table with labels" (KTRH.render cfg0 kvi) [sq|
+      in cmpTables "empty table with labels" (KTRH.render Nothing cfg0 kvi) [sq|
 ****
 <table class="kvitable">
   <thead class="kvitable_head">
@@ -118,93 +118,100 @@ testHTMLRendering =
 
     , testCase "nested table hideBlank=rows,cols, fitted, colstack=hundreds" $
       cmpTables "nested table hideBlank=rows,cols, fitted, colstack=hundreds"
-      (KTRH.render (cfg0 { KTR.sortKeyVals   = Just KTR.sortNumericAlpha
-                         , KTR.rowRepeat     = False
-                         , KTR.hideBlankCols = True
-                         , KTR.hideBlankRows = True
-                         , KTR.equisizedCols = False
-                         , KTR.colStackAt    = Just "hundreds"
-                         }) nestedTable)
+      (KTRH.render Nothing (cfg0
+                            { KTR.sortKeyVals   = Just KTR.sortNumericAlpha
+                            , KTR.rowRepeat     = False
+                            , KTR.hideBlankCols = True
+                            , KTR.hideBlankRows = True
+                            , KTR.equisizedCols = False
+                            , KTR.colStackAt    = Just "hundreds"
+                            }) nestedTable)
         [sq_f|README.md|]
 
     , testCase "nested table hide=none, fitted, colstack=hundreds" $
       cmpTables "nested table hide=none, fitted, colstack=hundreds"
-      (KTRH.render (cfg0 { KTR.sortKeyVals   = Just KTR.sortNumericAlpha
-                         , KTR.rowRepeat     = False
-                         , KTR.hideBlankCols = False
-                         , KTR.hideBlankRows = False
-                         , KTR.equisizedCols = False
-                         , KTR.colStackAt    = Just "hundreds"
-                         }) nestedTable)
+      (KTRH.render Nothing (cfg0
+                            { KTR.sortKeyVals   = Just KTR.sortNumericAlpha
+                            , KTR.rowRepeat     = False
+                            , KTR.hideBlankCols = False
+                            , KTR.hideBlankRows = False
+                            , KTR.equisizedCols = False
+                            , KTR.colStackAt    = Just "hundreds"
+                            }) nestedTable)
       [sq_f|examples/hundreds_all.md|]
 
         -- duplication of the above in test/evenodd.md
     , testCase "nested table hide=none, fitted, colstack=hundreds" $
       do
        cmpTables "nested table hide=none, fitted, colstack=hundreds"
-        (KTRH.render (cfg0 { KTR.sortKeyVals   = Just KTR.sortNumericAlpha
-                           , KTR.rowRepeat     = False
-                           , KTR.hideBlankCols = False
-                           , KTR.hideBlankRows = False
-                           , KTR.equisizedCols = False
-                           , KTR.colStackAt    = Just "hundreds"
-                           }) nestedTable)
+        (KTRH.render Nothing (cfg0
+                              { KTR.sortKeyVals   = Just KTR.sortNumericAlpha
+                              , KTR.rowRepeat     = False
+                              , KTR.hideBlankCols = False
+                              , KTR.hideBlankRows = False
+                              , KTR.equisizedCols = False
+                              , KTR.colStackAt    = Just "hundreds"
+                              }) nestedTable)
         [sq2_f|test/evenodd.md|]
 
     , testCase "nested table hide=none, fitted, colstack=hundreds, maxCells=60" $
       do
        cmpTables "nested table hide=none, fitted, colstack=hundreds, maxCells=60"
-        (KTRH.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
-                         , KTR.rowRepeat     = False
-                         , KTR.hideBlankCols = False
-                         , KTR.hideBlankRows = False
-                         , KTR.equisizedCols = False
-                         , KTR.colStackAt    = Just "hundreds"
-                         , KTR.maxCells      = 60
-                         }) nestedTable)
+        (KTRH.render Nothing (cfg0
+                              { KTR.sortKeyVals = Just KTR.sortNumericAlpha
+                              , KTR.rowRepeat     = False
+                              , KTR.hideBlankCols = False
+                              , KTR.hideBlankRows = False
+                              , KTR.equisizedCols = False
+                              , KTR.colStackAt    = Just "hundreds"
+                              , KTR.maxCells      = 60
+                              }) nestedTable)
         [sq4_f|test/evenodd.md|]
 
     , testCase "nested table hide=none, fitted, no colstack, maxCells=60" $
       do
        cmpTables "nested table hide=none, fitted, no colstack, maxCells=60"
-        (KTRH.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
-                         , KTR.rowRepeat     = False
-                         , KTR.hideBlankCols = False
-                         , KTR.hideBlankRows = False
-                         , KTR.equisizedCols = False
-                         , KTR.colStackAt    = Nothing
-                         , KTR.maxCells      = 60
-                         }) nestedTable)
+        (KTRH.render Nothing (cfg0
+                              { KTR.sortKeyVals = Just KTR.sortNumericAlpha
+                              , KTR.rowRepeat     = False
+                              , KTR.hideBlankCols = False
+                              , KTR.hideBlankRows = False
+                              , KTR.equisizedCols = False
+                              , KTR.colStackAt    = Nothing
+                              , KTR.maxCells      = 60
+                              }) nestedTable)
         [sq6_f|test/evenodd.md|]
 
     , testCase "nested table hideBlank=rol,col colstack=thousands" $
       cmpTables "nested table hideBlank=row,col colstack=thousands"
-        (KTRH.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
-                           , KTR.rowRepeat = False
-                           , KTR.hideBlankCols = True
-                           , KTR.hideBlankRows = True
-                           , KTR.equisizedCols = False
-                           , KTR.colStackAt = Just "thousands"
-                           }) nestedTable)
+        (KTRH.render Nothing (cfg0
+                              { KTR.sortKeyVals = Just KTR.sortNumericAlpha
+                              , KTR.rowRepeat = False
+                              , KTR.hideBlankCols = True
+                              , KTR.hideBlankRows = True
+                              , KTR.equisizedCols = False
+                              , KTR.colStackAt = Just "thousands"
+                              }) nestedTable)
         [sq2_f|README.md|]
 
     , testCase "nested table hideBlank=rol,col" $
       cmpTables "nested table hideBlank=row,col"
-        (KTRH.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
-                           , KTR.rowRepeat = False
-                           , KTR.hideBlankCols = True
-                           , KTR.hideBlankRows = True
-                           , KTR.equisizedCols = False
-
-                           }) nestedTable)
+        (KTRH.render Nothing (cfg0
+                              { KTR.sortKeyVals = Just KTR.sortNumericAlpha
+                              , KTR.rowRepeat = False
+                              , KTR.hideBlankCols = True
+                              , KTR.hideBlankRows = True
+                              , KTR.equisizedCols = False
+                              }) nestedTable)
         [sq3_f|README.md|]
 
     , testCase "big table grouped sorted" $
       cmpTables "big table grouped sorted"
-      (KTRH.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
-                         , KTR.rowRepeat = False
-                         , KTR.rowGroup = [ "Location", "Biome", "Category" ]
-                         }) zooTable2)
+      (KTRH.render Nothing (cfg0
+                            { KTR.sortKeyVals = Just KTR.sortNumericAlpha
+                            , KTR.rowRepeat = False
+                            , KTR.rowGroup = [ "Location", "Biome", "Category" ]
+                            }) zooTable2)
       [sq_f|examples/zoo.md|]
 
     , testCase "big table grouped sorted no-subtype colstack" $
@@ -217,12 +224,13 @@ testHTMLRendering =
                  Nothing -> (ks,v) : newl
                  Just v' -> (ks, v' + v) : filter ((ks /=) . fst) newl
       in cmpTables "big table grouped sorted no-subtype colstack"
-         (KTRH.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
-                            , KTR.rowRepeat   = False
-                            , KTR.rowGroup    = [ "Location", "Biome", "Category" ]
-                            , KTR.colStackAt  = Just "Name"
-                            , KTR.equisizedCols = False
-                            }) zt)
+         (KTRH.render Nothing (cfg0
+                               { KTR.sortKeyVals = Just KTR.sortNumericAlpha
+                               , KTR.rowRepeat   = False
+                               , KTR.rowGroup    = [ "Location", "Biome", "Category" ]
+                               , KTR.colStackAt  = Just "Name"
+                               , KTR.equisizedCols = False
+                               }) zt)
          [sq2_f|examples/zoo.md|]
 
     , testCase "big square table, numCols and numCells limited" $
@@ -241,13 +249,14 @@ testHTMLRendering =
                 , b <- [0..100::Int]
                 ]
       in cmpTables "big table grouped sorted no-subtype colstack"
-         (KTRH.render (cfg0 { KTR.sortKeyVals = Just KTR.sortNumericAlpha
-                            , KTR.rowRepeat   = False
-                            , KTR.rowGroup    = [ "Location", "Biome", "Category" ]
-                            , KTR.colStackAt  = Just "Batter"
-                            , KTR.equisizedCols = False
-                            , KTR.maxCols = 20
-                            , KTR.maxCells = 600
-                            }) tbl)
+         (KTRH.render Nothing (cfg0
+                               { KTR.sortKeyVals = Just KTR.sortNumericAlpha
+                               , KTR.rowRepeat   = False
+                               , KTR.rowGroup    = [ "Location", "Biome", "Category" ]
+                               , KTR.colStackAt  = Just "Batter"
+                               , KTR.equisizedCols = False
+                               , KTR.maxCols = 20
+                               , KTR.maxCells = 600
+                               }) tbl)
          [sq2_f|test/bigsquare.md|]
     ]

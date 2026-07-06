@@ -1,5 +1,13 @@
 # Revision history for KVITable
 
+## 1.2.0.0 -- 2026-07-06
+
+* Added renderer argument to the HTML and ASCII `render` functions.  This is not
+  backward compatible, although the previous functionality can be obtained by
+  passing a new `Nothing` initial argument.  This argument allows passing an
+  optional renderer that can be used for various effects
+  (e.g. `Prettyprinter.Render.Termina.render`).
+
 ## 1.1.2.0 -- 2026-06-23
 
 * Support GHC 9.14

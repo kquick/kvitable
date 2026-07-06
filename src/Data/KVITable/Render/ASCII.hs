@@ -19,13 +19,14 @@ module Data.KVITable.Render.ASCII
 where
 
 import qualified Data.List as L
-import           Data.Maybe ( isNothing )
+import           Data.Maybe ( fromMaybe, isNothing )
 import           Data.Name
 import           Data.String ( fromString )
 import           Data.Text ( Text )
 import qualified Data.Text as T
 import           Lens.Micro ( (^.) )
 import           Numeric.Natural
+import qualified Prettyprinter as PP
 import           Text.Sayable
 
 import           Data.KVITable ( KVITable, KeySpec, keyVals )
@@ -40,11 +41,17 @@ import           Prelude hiding ( lookup )
 -- | Renders the specified table in ASCII format, using the specified
 -- 'RenderConfig' controls.
 
-render :: Sayable "normal" v => RenderConfig -> KVITable v -> Text
-render cfg t =
+render :: Sayable "normal" v
+       => Maybe (PP.Doc SayableAnn -> Text)
+          -- ^ Custom renderer which can be used to reAnnotate and perform
+          -- special rendering if desired.  The default is the plain text
+          -- rendering.
+       -> RenderConfig -> KVITable v
+       -> Text
+render rndr cfg t =
   let kmap = renderingKeyVals cfg $ t ^. keyVals
       (fmt, hdr) = renderHdrs cfg t kmap
-      bdy = renderSeq cfg fmt kmap t
+      bdy = renderSeq rndr cfg fmt kmap t
   in T.unlines $ hdr <> bdy
 
 ----------------------------------------------------------------------
@@ -80,7 +87,7 @@ fmtEmptyCols (FmtLine cols _ _) = sum cols == 0
 fmtAddColLeft :: Natural -> FmtLine -> FmtLine
 fmtAddColLeft leftCol (FmtLine cols s s') = FmtLine (leftCol : cols) s s'
 
-data FmtVal = Separator | TxtVal Text | CenterVal Text
+data FmtVal = Separator | TxtVal Natural Text | CenterVal Natural Text
             | Overage  -- cells for the overflow row/column
 
 fmtRender :: FmtLine -> [FmtVal] -> Text
@@ -88,31 +95,29 @@ fmtRender (FmtLine _cols _sigils _sepsigils) [] = ""
 fmtRender (FmtLine cols sigils sepsigils) vals@(val:_) =
   if length cols == length vals
   then let sig f o = case o of
-                       Separator   -> f sepsigils
-                       TxtVal _    -> f sigils
-                       CenterVal _ -> f sigils
-                       Overage     -> f sigils
+                       Separator    -> f sepsigils
+                       TxtVal {}    -> f sigils
+                       CenterVal {} -> f sigils
+                       Overage      -> f sigils
            l = sig sep val
            charRepeat n c = T.pack (replicate (fromEnum n) c)
-           rightAlign n t = let tl = toEnum $ T.length t
-                                rt = charRepeat (n - tl) ' ' <> t
-                            in if tl >= n then t else rt
-           centerIn n t = let tl = toEnum $ T.length t
-                              (w,e) = (n - tl - 2) `divMod` 2
-                              m = cap sigils
-                              ls = T.replicate (fromEnum $ w + 0) m
-                              rs = T.replicate (fromEnum $ w + e) m
-                          in if tl + 2 >= n
-                             then rightAlign n t
-                             else ls <> " " <> t <> " " <> rs
+           rightAlign n w t = let rt = charRepeat (n - w) ' ' <> t
+                              in if w >= n then t else rt
+           centerIn n w t = let (w',e) = (n - w - 2) `divMod` 2
+                                m = cap sigils
+                                ls = T.replicate (fromEnum $ w' + 0) m
+                                rs = T.replicate (fromEnum $ w' + e) m
+                            in if w + 2 >= n
+                               then rightAlign n w t
+                               else ls <> " " <> t <> " " <> rs
        in l <>
           T.concat
           [ sig pad fld <>
             (case fld of
-                Separator   -> charRepeat sz '-'
-                TxtVal v    -> rightAlign sz v
-                CenterVal t -> centerIn sz t
-                Overage     -> centerIn sz "+"
+                Separator     -> charRepeat sz '-'
+                TxtVal w v    -> rightAlign sz w v
+                CenterVal w t -> centerIn sz w t
+                Overage       -> centerIn sz 1 "+"
             ) <>
             sig pad fld <>
             sig sep fld  -- KWQ or if next fld is Nothing
@@ -159,7 +164,7 @@ hdrstep _cfg t ([], []) =
       valcoltsz = nameLength valcoltxt
       valsizes  = nLength . sez @"normal" . snd <$> KVIT.toList t
       valwidth  = maxOf 0 $ valcoltsz : valsizes
-      hdrVal = TxtVal $ nameText valcoltxt
+      hdrVal = TxtVal (nameLength valcoltxt) (nameText valcoltxt)
   in single $ HdrLine (fmtLine $ single valwidth) (single hdrVal) ""
 hdrstep cfg t ([], colKeyMap) =
   hdrvalstep cfg t colKeyMap mempty  -- switch to column-stacking mode
@@ -167,7 +172,8 @@ hdrstep cfg t ((key,keyvals) : keys, colKeyMap) =
   let keyw = max (nameLength key)
              $ (maxOf 0 . fmap (nameLength . toHdrText)) keyvals
       mkhdr (hs, v) (HdrLine fmt hdrvals trailer) =
-        ( HdrLine (fmtAddColLeft keyw fmt) (TxtVal (nameText v) : hdrvals) trailer : hs , "")
+        ( HdrLine (fmtAddColLeft keyw fmt)
+          (TxtVal (nameLength v) (nameText v) : hdrvals) trailer : hs , "")
   in reverse $ fst $ foldl mkhdr (mempty, key) $ hdrstep cfg t (keys, colKeyMap)
   -- first line shows hdrval for non-colstack'd columns, others are blank
 
@@ -189,8 +195,9 @@ hdrvalstep cfg t ((key,titles) : []) steppath =
                 then (replicate (length cwidths) (maxOf 0 cwidths))
                 else cwidths
       tr = convertName key
-      hdrTxt = nameText . toHdrText
-  in single $ HdrLine (fmtLine $ fmtcols) (TxtVal . hdrTxt <$> titles) tr
+      -- hdrTxt = nameText . toHdrText
+      toTxtVal x = TxtVal (nameLength x) (nameText x)
+  in single $ HdrLine (fmtLine $ fmtcols) (toTxtVal . toHdrText <$> titles) tr
 hdrvalstep cfg t ((key,vals) : keys) steppath =
   let subhdrsV = \case
         V v -> hdrvalstep cfg t keys (snoc steppath (key,v))
@@ -227,7 +234,9 @@ hdrvalstep cfg t ((key,vals) : keys) steppath =
       hdrJoin hl = foldl hlJoin (HdrLine (fmtLine mempty) mempty "") hl
       hlJoin (HdrLine (FmtLine c s j) v _) (HdrLine (FmtLine c' _ _) v' r) =
         HdrLine (FmtLine (c<>c') s j) (v<>v') r
-      tvals = CenterVal . nameText . toHdrText <$> vals
+      tvals = let cVal v = let ht = toHdrText v
+                           in CenterVal (nameLength ht) (nameText ht)
+              in cVal <$> vals
   in HdrLine (fmtLine szhdrs) tvals (convertName key) : rsz_extsubhdrs
 hdrvalstep _ _ [] _ = error "ASCII hdrvalstep with empty keys after matching colStackAt -- impossible"
 
@@ -239,12 +248,14 @@ toHdrText = \case
 ----------------------------------------------------------------------
 
 renderSeq :: Sayable "normal" v
-          => RenderConfig
+          => Maybe (PP.Doc SayableAnn -> Text)
+          -> RenderConfig
           -> FmtLine
           -> (TblHdrs, TblHdrs)
           -> KVITable v
           -> [Text]
-renderSeq cfg fmt kmap kvitbl = fmtRender fmt . snd <$> asciiRows kmap mempty
+renderSeq rndr cfg fmt kmap kvitbl =
+  fmtRender fmt . snd <$> asciiRows kmap mempty
   where
     filterBlank = if hideBlankRows cfg
                   then L.filter (not . all isNothing . snd)
@@ -258,10 +269,19 @@ renderSeq cfg fmt kmap kvitbl = fmtRender fmt . snd <$> asciiRows kmap mempty
                    Nothing -> hideBlankRows cfg
                    Just _  -> False
       in if skip then mempty
-         else single $ (False, single $ maybe (TxtVal "") TxtVal (T.pack . sez @"normal" <$> v) )
+         else let toTxtVal x =
+                    let xl = toEnum $ length $ sez @"normal" x
+                        xp = maybe (fromString . sez) id rndr
+                             $ saying @"normal"
+                             $ sayable x
+                    in TxtVal xl xp
+              in single $ (False, single $ maybe (TxtVal 0 "") toTxtVal v)
     asciiRows ([], colKeyMap) path =
       let filterOrDefaultBlankRows = fmap (fmap defaultBlanks) . filterBlank
-          defaultBlanks = fmap (\v -> maybe (TxtVal "") TxtVal v)
+          defaultBlanks = fmap (\case
+                                   Nothing -> TxtVal 0 ""
+                                   Just (vl, vp) -> TxtVal vl vp
+                               )
       in filterOrDefaultBlankRows $ single $ (False, multivalRows colKeyMap path)
     asciiRows ((key, keyvals) : kseq, colKeyMap) path =
       let subrows = \case
@@ -277,14 +297,18 @@ renderSeq cfg fmt kmap kvitbl = fmtRender fmt . snd <$> asciiRows kmap mempty
           genSubRow keyval = grprow $ fst
                              $ foldl leftAdd (mempty, toHdrText keyval) $ subrows keyval
           leftAdd (acc,kv) (b,subrow) =
-            (snoc acc (b, TxtVal (nameText kv) : subrow)
+            (snoc acc (b, TxtVal (nameLength kv) (nameText kv) : subrow)
             , if rowRepeat cfg then kv else ""
             )
       in concat (genSubRow <$> keyvals)
 
-    multivalRows :: TblHdrs -> KeySpec -> [ Maybe Text ]
+    multivalRows :: TblHdrs -> KeySpec -> [ Maybe (Natural, Text) ]
     multivalRows ((key, keyvals) : []) path =
-      let showEnt = T.pack . sez @"normal"
+      let showEnt x = ( toEnum $ length $ sez @"normal" x
+                      , fromMaybe (fromString . sez) rndr
+                        $ saying
+                        $ sayable @"normal" x
+                      )
       in (\case
              V v -> (showEnt <$> (KVIT.lookup' (snoc path (key,v)) kvitbl))
              _ -> Nothing
