@@ -23,7 +23,7 @@
       flake = false;
     };
     microlens-src = {
-      url = "github:stevenfontanella/microlens";
+      url = "github:monadfix/microlens";
       flake = false;
     };
     named-text = {
