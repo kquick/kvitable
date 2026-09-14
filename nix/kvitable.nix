@@ -5,7 +5,7 @@
 mkDerivation {
   pname = "kvitable";
   version = "1.2.0.0";
-  src = ./.;
+  src = ./..;
   libraryHaskellDepends = [
     base containers lucid microlens named-text prettyprinter sayable
     text
