@@ -1,7 +1,7 @@
 dev
  subcmd
    build
-     Builds the kvitable library
+     Builds the project
        exec = cabal build kvitable
    test
      testcase
