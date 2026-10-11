@@ -64,12 +64,17 @@
             }:
     rec
       {
-      devShells = levers.haskellShells
-        { inherit nixpkgs;
-          flake = self;
-          defaultPkg = "kvitable";
-          # additionalPackages = pkgs.haskell.packages.ghc8107.profiteur
-        };
+        apps = levers.eachSystem (s:
+          {
+            depmgr = levers.apps.${s}.depmgr;
+          });
+
+        devShells = levers.haskellShells
+          { inherit nixpkgs;
+            flake = self;
+            defaultPkg = "kvitable";
+            # additionalPackages = pkgs.haskell.packages.ghc8107.profiteur
+          };
 
         packages = levers.eachSystem (system:
           let mkHaskell = levers.mkHaskellPkg { inherit nixpkgs system;
@@ -84,7 +89,7 @@
                 ["lucid" "html-parse"];
             };
             html-parse = mkHaskell "html-parse" html-parse-src {};
-            microlens = mkHaskell "microlens" "${microlens-src}/microlens" {};
+            microlens = named-text.packages."${system}".microlens;
           });
       };
 }
